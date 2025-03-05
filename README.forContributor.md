@@ -1,9 +1,5 @@
 # Event_Management_System
 
-## Description
-This project is an Event Management System designed to help users create, manage, and track events efficiently. It includes features for scheduling, participant management, and event analytics.
-
----
 
 ## Getting Started
 To get started with the project, follow these steps:
