@@ -1,32 +1,37 @@
-import React  from "react";
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { Routes, Route, Navigate } from "react-router-dom";
+import { SignedIn, SignedOut } from "@clerk/clerk-react";
 
-import  Login from './pages/Login.jsx'
-import  Signup from './pages/Signup.jsx'
-
-import  Home  from './pages/Home.jsx'
-
+import PublicHome from "./pages/PublicHome.jsx"; // Visible to everyone
+import Home from "./pages/Home.jsx"; // Visible to signed-in users
+import Login from "./pages/Login.jsx";
+import Signup from "./pages/Signup.jsx";
 
 function App() {
   return (
-    <>
-     <Router>
-        <Routes>
-          <Route exact path='/' element={<Home />} />
-          <Route exact path='/login' element={<Login />} />
-          <Route exact path='/signup' element={<Signup />} />
+    <Routes>
+      {/* Show Public Home if Signed Out, Authenticated Home if Signed In */}
+      <Route
+        path="/"
+        element={
+          <>
+            <SignedOut>
+              <PublicHome />
+            </SignedOut>
+            <SignedIn>
+              <Home />
+            </SignedIn>
+          </>
+        }
+      />
 
-          
+      {/* Login & Signup Routes */}
+      <Route path="/login" element={<SignedOut><Login /></SignedOut>} />
+      <Route path="/signup" element={<SignedOut><Signup /></SignedOut>} />
 
-          
-        </Routes>
-      </Router>
-    </>
-  )
+      {/* Catch-all for unknown routes */}
+      <Route path="*" element={<Navigate to="/" />} />
+    </Routes>
+  );
 }
 
-export default App
+export default App;
