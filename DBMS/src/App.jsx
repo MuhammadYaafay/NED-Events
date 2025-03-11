@@ -5,6 +5,7 @@ import PublicHome from "./pages/PublicHome.jsx"; // Visible to everyone
 import Home from "./pages/Home.jsx"; // Visible to signed-in users
 import Login from "./pages/Login.jsx";
 import Signup from "./pages/Signup.jsx";
+import LandingPage from "./pages/LandingPage.jsx";
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
       {/* Login & Signup Routes */}
       <Route path="/login" element={<SignedOut><Login /></SignedOut>} />
       <Route path="/signup" element={<SignedOut><Signup /></SignedOut>} />
+      <Route path="/homepage" element={<LandingPage/>} />
 
       {/* Catch-all for unknown routes */}
       <Route path="*" element={<Navigate to="/" />} />
