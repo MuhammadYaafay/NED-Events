@@ -1,6 +1,7 @@
 import React from 'react';
 import NavBar from '../components/NavBar.jsx';
 import EventCard from '../components/EventCard.jsx';
+import Card from '../components/Card.jsx';
 
 export default function LandingPage() {
   const data = [
@@ -28,6 +29,7 @@ export default function LandingPage() {
     {
       username: 'john',
       headCount: 30,
+      price:1200,
       review: 4.2,
       isPublic: true,
       intro: 'Expert in large-scale conferences and corporate retreats.',
@@ -39,6 +41,8 @@ export default function LandingPage() {
       username: 'emma',
       headCount: 18,
       review: 4.7,
+      price:1200,
+
       isPublic: false,
       intro: 'Wedding and private event specialist.',
       desp: 'Emma brings creativity and elegance to weddings and special occasions.',
@@ -49,6 +53,8 @@ export default function LandingPage() {
       username: 'mike',
       headCount: 40,
       review: 4.9,
+      price:1200,
+
       isPublic: true,
       intro: 'Concert and festival organizer.',
       desp: 'Mike manages large-scale entertainment events, ensuring unforgettable experiences.',
@@ -63,10 +69,11 @@ export default function LandingPage() {
       <div className="container mx-auto px-4">
         <div className="flex flex-wrap justify-center gap-4">
           {data.map((e, index) => (
-            <EventCard key={index} data={e} />
+            <Card key={index} data={e} />
           ))}
         </div>
       </div>
+      
     </div>
   );
 }
