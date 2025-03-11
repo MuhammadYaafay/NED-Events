@@ -4,6 +4,7 @@ import EventCard from '../components/EventCard.jsx';
 
 export default function LandingPage() {
   const data = [
+    // This is a demo data. this data would be fetched from DB
     {
       username: 'adil',
       headCount: 12,
