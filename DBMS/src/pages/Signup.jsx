@@ -6,7 +6,7 @@ const Signup = () => {
   const [email, setEmail] = useState('');
   const [Username, setUsername] = useState('');
   const [type, setType] = useState(["Vendor", "Buyer"]);
-
+    
   const [password, setPassword] = useState('');
 
   const handleSubmit = (e) => {
