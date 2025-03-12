@@ -6,18 +6,21 @@ export default function LandingPage() {
   const events = [
     {
       eventName: 'Corporate Gala Night',
+      createdBy:"john Wick",
       attendees: 120,
-      rating: 4.5,
+      rating: 5,
       category: 'Networking',
       location: 'New York, USA',
       description: 'An elegant evening of networking, dining, and entertainment for corporate professionals.',
       date: '2024-03-15',
       img: 'https://example.com/gala.jpg',
-      price: 500,
+      
     },
     {
       eventName: 'Creative Arts Festival',
       attendees: 250,
+      createdBy:"john Wick",
+
       rating: 4.8,
       category: 'Arts & Culture',
       location: 'Los Angeles, USA',
@@ -29,6 +32,8 @@ export default function LandingPage() {
     {
       eventName: 'Tech Conference 2024',
       attendees: 300,
+      createdBy:"john Wick",
+
       rating: 4.2,
       category: 'Technology',
       location: 'San Francisco, USA',
@@ -40,6 +45,8 @@ export default function LandingPage() {
     {
       eventName: 'Luxury Wedding Expo',
       attendees: 180,
+      createdBy:"john Wick",
+
       rating: 4.7,
       category: 'Wedding & Lifestyle',
       location: 'Miami, USA',
@@ -51,6 +58,8 @@ export default function LandingPage() {
     {
       eventName: 'Summer Music Festival',
       attendees: 400,
+      createdBy:"john Wick",
+
       rating: 4.9,
       category: 'Music & Entertainment',
       location: 'Chicago, USA',
