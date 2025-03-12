@@ -26,7 +26,7 @@ const Login = () => {
       await setActive({ session: result.createdSessionId });
 
       // Step 3: Redirect to home page
-      navigate("/");
+      navigate("/homepage");
     } catch (err) {
       setError(err.errors?.[0]?.message || "Login failed. Please try again.");
     }

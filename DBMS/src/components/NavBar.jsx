@@ -3,77 +3,105 @@ import { Link, NavLink } from "react-router-dom";
 import { FaTimes, FaBars } from "react-icons/fa";
 
 const Header = () => {
-  const [navbar, setNavbar] = useState(false);
-  const Navbar = [
-    {
-      name: "Home",
-      link: "/homepage",
-    },
-    {
-      name: "About",
-      link: "/about",
-    },
+  const [navbarOpen, setNavbarOpen] = useState(false);
+
+  const menuItems = [
+    { name: "Home", link: "/homepage" },
+    { name: "Events", link: "/events" },
+    { name: "Bookings", link: "/bookings" },
+    { name: "Vendors", link: "/vendors" },
+    { name: "About", link: "/about" },
+    { name: "Contact", link: "/contact" },
   ];
+
   return (
-    <>
-      <nav className="w-full h-auto bg-gray-800 lg:px-24 md:px-16 sm:px-14 px-12 py-2 shadow-md">
-        <div className="justify-between mx-auto lg:w-full md:items-center md:flex">
-          <div>
-            <div className="flex items-center justify-between py-3 md:py-5 md:block">
-              <Link className="text-3xl text-orange-500 font-semibold tracking-[0.1rem]">
-                Navbar
-              </Link>
+    <nav className="w-full bg-[#001f3f] shadow-lg">
+      <div className="container mx-auto px-6 py-4 flex justify-between items-center">
+        {/* LOGO */}
+        <Link
+          to="/"
+          className="text-2xl font-bold text-orange-500 tracking-wide"
+        >
+          Event Management
+        </Link>
 
-              <div className="md:hidden">
-                <button
-                  className="p-2 text-gray-700 rounded-md outline-none border border-transparent focus:border-gray-400 focus:border"
-                  onClick={() => setNavbar(!navbar)}
-                >
-                  {navbar ? (
-                    <FaTimes
-                      className="text-gray-400 cursor-pointer"
-                      size={24}
-                    />
-                  ) : (
-                    <FaBars
-                      className="text-gray-400 cursor-pointer"
-                      size={24}
-                    />
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div
-            className={`flex justify-between items-center md:block ${
-              navbar ? "block" : "hidden"
-            }`}
-          >
-            <ul className="list-none lg:flex md:flex sm:block block gap-x-5 gap-y-16">
-              {Navbar.map((item, index) => (
-                <li key={index}>
-                  <NavLink
-                    to={item.link}
-                    className={({ isActive }) =>
-                      isActive
-                        ? "text-gray-600 text-[1.15rem] font-bold font-medium tracking-wider"
-                        : "text-gray-400 text-[1.15rem] font-medium tracking-wider hover:text-gray-200 ease-out duration-700"
-                    }
-                    // className="text-gray-400 text-[1.15rem] font-medium tracking-wider hover:text-gray-200 ease-out duration-700"
-                  >
-                    {item.name}
-                  </NavLink>
-                </li>
-              ))}
-              <button className="bg-orange-500 text-[1.1rem] font-normal text-white px-5 py-1.5 rounded lg:ml-10 md:ml-6 sm:ml-0 ml-0">
-                <Link to="/">Register</Link>
-              </button>
-            </ul>
-          </div>
+        {/* NAVIGATION LINKS */}
+        <div className="hidden md:flex space-x-8">
+          {menuItems.map((item, index) => (
+            <NavLink
+              key={index}
+              to={item.link}
+              className={({ isActive }) =>
+                `text-lg font-medium tracking-wide transition-colors duration-300 ${
+                  isActive
+                    ? "text-orange-400 font-bold"
+                    : "text-gray-300 hover:text-white"
+                }`
+              }
+            >
+              {item.name}
+            </NavLink>
+          ))}
         </div>
-      </nav>
-    </>
+
+        {/* REGISTER AND LOGIN BUTTON */}
+        <div className="hidden md:flex space-x-4">
+          <Link
+            to="/signup"
+            className="bg-orange-500 hover:bg-orange-600 text-white w-32 text-center px-6 py-2 rounded-lg text-lg font-medium transition-all duration-300"
+          >
+            Sign Up
+          </Link>
+
+          <Link
+            to="/login"
+            className="bg-orange-500 hover:bg-orange-600 text-white w-32 text-center px-6 py-2 rounded-lg text-lg font-medium transition-all duration-300"
+          >
+            Login
+          </Link>
+        </div>
+
+        {/* MOBILE MENU TOGGLE BUTTON */}
+        <button
+          className="md:hidden text-gray-300 focus:outline-none"
+          onClick={() => setNavbarOpen(!navbarOpen)}
+        >
+          {navbarOpen ? <FaTimes size={28} /> : <FaBars size={28} />}
+        </button>
+      </div>
+
+      {/* MOBILE NAVIGATION MENU */}
+      <div
+        className={`md:hidden bg-gray-800 py-4 px-6 space-y-4 transition-all duration-300 ${
+          navbarOpen ? "block" : "hidden"
+        }`}
+      >
+        {menuItems.map((item, index) => (
+          <NavLink
+            key={index}
+            to={item.link}
+            className={({ isActive }) =>
+              `block text-lg font-medium tracking-wide py-2 px-4 rounded-md transition-all ${
+                isActive
+                  ? "text-orange-400 font-bold"
+                  : "text-gray-300 hover:text-white"
+              }`
+            }
+            onClick={() => setNavbarOpen(false)} // Close menu on click
+          >
+            {item.name}
+          </NavLink>
+        ))}
+
+        <Link
+          to="/signup"
+          className="block bg-orange-500 hover:bg-orange-600 text-white text-center px-6 py-2 rounded-lg text-lg font-medium transition-all duration-300"
+          onClick={() => setNavbarOpen(false)}
+        >
+          Sign Up
+        </Link>
+      </div>
+    </nav>
   );
 };
 

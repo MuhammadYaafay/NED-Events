@@ -48,7 +48,7 @@ const Signup = () => {
       // Step 5: Activate session and redirect
       await setActive({ session: result.createdSessionId });
 
-      window.location.href = "/";
+      window.location.href = "/homepage";
     } catch (err) {
       setError(err.errors?.[0]?.message || "Verification failed. Please try again.");
     }
