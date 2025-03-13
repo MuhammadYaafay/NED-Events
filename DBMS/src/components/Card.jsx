@@ -18,7 +18,7 @@ const Card = ({ data }) => {
         <h5  className="text-gray-600 mt-2 text-sm">Created By : <b>{data.createdBy}</b></h5>
         <p className="text-lg font-medium mt-2">Date: <span className="font-semibold text-blue-600">{data.date}</span></p>
         <p className="text-lg font-medium mt-2">Location: <span className="font-semibold text-blue-600">{data.location}</span></p>
-        <p className="text-xl font-semibold text-blue-500 mt-2">${data.price ?? 'Free'}</p>
+        <p className="text-xl font-semibold text-blue-500 mt-2">Rs. {data.price ?? 'Free'}</p>
         <div className="mt-3 text-gray-500 text-sm">
           <p>Attendees: <span className="font-medium text-gray-800">{data.attendees}</span></p>
           <div className="flex items-center mt-1">
