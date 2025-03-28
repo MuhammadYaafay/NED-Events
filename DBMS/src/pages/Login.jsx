@@ -1,10 +1,8 @@
 import { LogIn } from "lucide-react";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useSignIn } from "@clerk/clerk-react";
 
 const Login = () => {
-  const { signIn, isLoaded, setActive } = useSignIn();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -12,24 +10,7 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!isLoaded) return;
-
-    try {
-      // Step 1: Attempt to sign in
-      const result = await signIn.attemptFirstFactor({
-        strategy: "password",
-        identifier: email,
-        password,
-      });
-
-      // Step 2: Activate the session
-      await setActive({ session: result.createdSessionId });
-
-      // Step 3: Redirect to home page
       navigate("/homepage");
-    } catch (err) {
-      setError(err.errors?.[0]?.message || "Login failed. Please try again.");
-    }
   };
 
   return (

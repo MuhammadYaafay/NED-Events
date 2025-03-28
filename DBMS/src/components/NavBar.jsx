@@ -1,11 +1,9 @@
 import React, { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { FaTimes, FaBars } from "react-icons/fa";
-import { useUser, UserButton } from "@clerk/clerk-react";
 
 const Header = () => {
   const [navbarOpen, setNavbarOpen] = useState(false);
-  const { isSignedIn } = useUser(); // Clerk authentication
 
   const menuItems = [
     { name: "Home", link: "/homepage" },
@@ -46,27 +44,21 @@ const Header = () => {
           ))}
         </div>
 
-        {/* CONDITIONAL AUTHENTICATION DISPLAY */}
+        {/* AUTH BUTTONS (WITHOUT CLERK) */}
         <div className="hidden md:flex space-x-4">
-          {isSignedIn ? (
-            <UserButton afterSignOutUrl="/" />
-          ) : (
-            <>
-              <Link
-                to="/signup"
-                className="bg-orange-500 hover:bg-orange-600 text-white w-32 text-center px-6 py-2 rounded-lg text-lg font-medium transition-all duration-300"
-              >
-                Sign Up
-              </Link>
+          <Link
+            to="/signup"
+            className="bg-orange-500 hover:bg-orange-600 text-white w-32 text-center px-6 py-2 rounded-lg text-lg font-medium transition-all duration-300"
+          >
+            Sign Up
+          </Link>
 
-              <Link
-                to="/login"
-                className="bg-orange-500 hover:bg-orange-600 text-white w-32 text-center px-6 py-2 rounded-lg text-lg font-medium transition-all duration-300"
-              >
-                Login
-              </Link>
-            </>
-          )}
+          <Link
+            to="/login"
+            className="bg-orange-500 hover:bg-orange-600 text-white w-32 text-center px-6 py-2 rounded-lg text-lg font-medium transition-all duration-300"
+          >
+            Login
+          </Link>
         </div>
 
         {/* MOBILE MENU TOGGLE BUTTON */}
@@ -101,20 +93,22 @@ const Header = () => {
           </NavLink>
         ))}
 
-        {/* MOBILE AUTH DISPLAY */}
-        {isSignedIn ? (
-          <div className="flex justify-center">
-            <UserButton afterSignOutUrl="/" />
-          </div>
-        ) : (
-          <Link
-            to="/signup"
-            className="block bg-orange-500 hover:bg-orange-600 text-white text-center px-6 py-2 rounded-lg text-lg font-medium transition-all duration-300"
-            onClick={() => setNavbarOpen(false)}
-          >
-            Sign Up
-          </Link>
-        )}
+        {/* MOBILE AUTH BUTTONS */}
+        <Link
+          to="/signup"
+          className="block bg-orange-500 hover:bg-orange-600 text-white text-center px-6 py-2 rounded-lg text-lg font-medium transition-all duration-300"
+          onClick={() => setNavbarOpen(false)}
+        >
+          Sign Up
+        </Link>
+
+        <Link
+          to="/login"
+          className="block bg-orange-500 hover:bg-orange-600 text-white text-center px-6 py-2 rounded-lg text-lg font-medium transition-all duration-300"
+          onClick={() => setNavbarOpen(false)}
+        >
+          Login
+        </Link>
       </div>
     </nav>
   );
