@@ -99,7 +99,6 @@ CREATE TABLE payments (
     related_id INT NOT NULL,
 
     FOREIGN KEY (user_id) REFERENCES users(user_id)
-    -- Note: related_id is polymorphic, so no FK constraint here
 );
 
 
