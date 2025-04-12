@@ -3,7 +3,7 @@ import mysql from "mysql"
 const db = mysql.createConnection({
     host: "localhost",
     user: "root", 
-    password: "sufia123",
+    password: "",   //put your pw here
     database: "event_management_system"
 });
 
