@@ -115,7 +115,7 @@ CREATE TABLE notifications (
     title VARCHAR(255),
     message TEXT,
     type VARCHAR(100),
-    is_read BOOLEAN DEFAULT FALSE, -- notification will "die" when this becomes true
+    is_read BOOLEAN DEFAULT FALSE, -- notification will die when this becomes true
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
