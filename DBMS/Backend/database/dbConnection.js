@@ -5,7 +5,7 @@ export const checkConnection=async()=>{
         
         const db = mysql.createConnection({
             host: "localhost",
-            port:'33066', // adil has change his port having some issue in connecting with default "3306" port
+            port:'3306', 
             user: "root", 
             password: "12345",   //put your pw here
             database: "event_management_system"
