@@ -39,6 +39,9 @@ CREATE TABLE event_categories (
     description TEXT
 );
 --idfk whats this for lmao
+--this is for many to many relationship between events and categories so that we can have multiple categories for an event and multiple events for a category
+--this will be used to filter events based on categories
+--this will also be used to filter events based on categories
 CREATE TABLE event_category_mapping (
     mapping_id INT AUTO_INCREMENT PRIMARY KEY,
     event_id INT NOT NULL,
