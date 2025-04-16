@@ -1,1 +1,0 @@
-// when user says i want notifications on, this runs

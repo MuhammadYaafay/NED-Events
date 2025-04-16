@@ -1,1 +1,0 @@
-// create/delete bookmark (favorite)
