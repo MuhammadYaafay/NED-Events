@@ -65,6 +65,9 @@ const login = async (req, res) => {
     const user = users[0];
 
     //check password
+    // inpPassword is the password that user entered in the login form
+    // hashedPassword is the password that is stored in the database
+
     const isValidPassword = await comparePassword(password, user.password);
     if (!isValidPassword) {
       return res.status(400).json({ message: "Invalid password" });
