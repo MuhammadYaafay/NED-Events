@@ -102,7 +102,7 @@ const getProfile = async (req, res) => {
   try {
     const [users] = await db.query(
 
-      `SELECT id, name, email, role, image_url, created_at FROM users WHERE id = ?`,
+      `SELECT user_id, name, email, role, profile_image, created_at FROM users WHERE user_id = ?`,
       [req.user.id]
     );
 
