@@ -1,13 +1,17 @@
-const{  getUserbyID,
+const {  
+    getUserbyID,
     updateUserDetails,
-    getAllVendors} = require('../controller/user.controller.js');
-const { verifyToken } = require('../middlewares/auth.middleware');
+    getAllVendors
+  } = require('../controller/user.controller.js');
+  const { verifyToken } = require('../middlewares/auth.middleware');
+  const express = require('express');
+  const router = express.Router();
+  
 
-const express = require('express');
-const router = express.Router();
+  router.get('/:id', verifyToken, getUserbyID); 
+  router.put('/:id',verifyToken,updateUserDetails);
 
-router.get('/:id', verifyToken, getUserbyID);
-router.put('/:id', updateUserDetails);
-router.get('/vendors', verifyToken, getAllVendors);
-
-module.exports = router;
+  
+  
+  module.exports = router;
+  
