@@ -16,4 +16,5 @@ router.post("/register", regiserValidation, register);
 router.post("/login", loginValidation, login);
 router.get("/profile", verifyToken, getProfile);
 
+
 module.exports = router;

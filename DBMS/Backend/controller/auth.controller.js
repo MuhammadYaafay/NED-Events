@@ -100,7 +100,8 @@ const login = async (req, res) => {
 
 const getProfile = async (req, res) => {
   try {
-    const [users] = await pool.query(
+    const [users] = await db.query(
+
       `SELECT id, name, email, role, image_url, created_at FROM users WHERE id = ?`,
       [req.user.id]
     );
