@@ -1,5 +1,6 @@
-const db = require("../config/dbConnection");
+const db = require("../config/dbConnection.js");
 const { validationResult } = require("express-validator");
+const { hashedPassword, comparePassword } = require("../utils/hashPassword");
 
 function updateUserDetails() {
   return async (req, res) => {
@@ -9,35 +10,43 @@ function updateUserDetails() {
         return res.status(400).json({ message: errors.array() });
       }
 
-      const userId = req.user.id; // Get user ID from verified token
-      const { name = undefined, bio = undefined, image_url = undefined, email = undefined } = req.body;
+      // Get userId from URL params
+      const userId = req.params.id;
+
+      // Extract fields from the request body
+      const {  profile_image, email, password } = req.body;
 
       let updateQuery = "UPDATE users SET";
       const updateValues = [];
       const updateFields = [];
 
       if (name) {
-        updateFields.push(" name = ?");
+        updateFields.push("name = ?");
         updateValues.push(name);
       }
       if (bio) {
-        updateFields.push(" bio = ?");
+        updateFields.push("bio = ?");
         updateValues.push(bio);
       }
-      if (image_url) {
-        updateFields.push(" image_url = ?");
-        updateValues.push(image_url);
+      if (profile_image) {
+        updateFields.push("profile_image = ?");
+        updateValues.push(profile_image);
       }
       if (email) {
-        updateFields.push(" email = ?");
+        updateFields.push("email = ?");
         updateValues.push(email);
+      }
+      if (password) {
+        const hashedPassword = await comparePassword(password);
+        updateFields.push("password = ?");
+        updateValues.push(hashedPassword);
       }
 
       if (updateFields.length === 0) {
         return res.status(400).json({ message: "No fields to update" });
       }
 
-      updateQuery += updateFields.join(",") + " WHERE id = ?";
+      updateQuery += updateFields.join(",") + " WHERE user_id = ?";
       updateValues.push(userId);
 
       const [result] = await db.query(updateQuery, updateValues);
@@ -53,6 +62,7 @@ function updateUserDetails() {
     }
   };
 }
+
 function getAllVendors() {
   return async (req, res) => {
     try {
@@ -63,7 +73,7 @@ function getAllVendors() {
 
       // Query to get all vendors
       const [vendors] = await db.query(
-        "SELECT id, name, email, bio, image_url FROM users WHERE role = 'vendor'"
+        "SELECT user_id, name, email, bio, profile_image FROM users WHERE role = 'vendor'"
       );
 
       res.status(200).json({
@@ -81,20 +91,19 @@ function getAllVendors() {
 function getUserbyID() {
   return async (req, res) => {
     try {
-      const userId = req.params.id; // Get the user ID from the request parameters
+      const userId = req.params.id;
 
       // Query the database to get the user by ID
-      const [rows] = await db.query("SELECT * FROM users WHERE id = ?", [
-        userId,
-      ]);
+      const [rows] = await db.query(
+        "SELECT user_id, name, email, bio, profile_image, role, created_at FROM users WHERE user_id = ?", 
+        [userId]
+      );
 
       if (rows.length === 0) {
         return res.status(404).json({ message: "User not found" });
       }
 
-      const user = rows[0]; // Get the first row from the result
-
-      // Return the user data in the response
+      const user = rows[0];
       res.status(200).json(user);
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -108,3 +117,4 @@ module.exports = {
   updateUserDetails,
   getAllVendors
 };
+// Compare this snippet from dbms/Backend/controller/user.controller.js:
