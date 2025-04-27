@@ -12,6 +12,7 @@ const port = process.env.PORT || 8800;
 app.use(express.json());
 app.use(cors());
 
+
 //Routes
 app.use("/api/auth", authRoutes);
 
