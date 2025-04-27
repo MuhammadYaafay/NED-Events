@@ -1,6 +1,14 @@
 const db = require("../config/dbConnection.js");
 const { validationResult } = require("express-validator");
-
+// const jwt = require("jsonwebtoken");
+// const token = jwt.sign(
+//   {
+//     id: user.user_id, //this was set to user.id which is not in our db column(in our db there is user_id) so that is why in token the id for user was not generated
+//     role: user.role,
+//   },
+//   process.env.JWT_SECRET_KEY,
+//   { expiresIn: "24h" }
+// );
 const updateUserDetails = async (req, res) => {
     try {
       const errors = validationResult(req);
@@ -8,7 +16,7 @@ const updateUserDetails = async (req, res) => {
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const userId = req.params.id;
+      // const userId = req.params.id;
       const { bio, profile_image,name } = req.body;
 
       let updateQuery = "UPDATE users SET ";
@@ -32,7 +40,7 @@ const updateUserDetails = async (req, res) => {
       }
 
       updateQuery += updateFields.join(", ") + " WHERE user_id = ?";
-      updateValues.push(userId);
+      updateValues.push([req.user.id]);
 
       const [result] = await db.query(updateQuery, updateValues);
 
@@ -51,10 +59,10 @@ const updateUserDetails = async (req, res) => {
 
 const getUserbyID = async (req, res) => {
     try {
-      const userId = req.params.id;
+      // const userId = req.params.id;
       const [rows] = await db.query(
         "SELECT user_id, name, email, bio, profile_image, role, created_at FROM users WHERE user_id = ?", 
-        [userId]
+        [req.user.id]
       );
 
       if (rows.length === 0) {

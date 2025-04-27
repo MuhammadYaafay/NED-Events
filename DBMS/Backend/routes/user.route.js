@@ -8,8 +8,8 @@ const {
   const router = express.Router();
   
 
-  router.get('/:id', verifyToken, getUserbyID); 
-  router.put('/:id',verifyToken,updateUserDetails);
+  router.get('/profileDetails', verifyToken, getUserbyID); 
+  router.put('/updateProfile',verifyToken,updateUserDetails);
 
   
   
