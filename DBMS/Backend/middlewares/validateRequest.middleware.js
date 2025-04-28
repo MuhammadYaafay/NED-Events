@@ -1,5 +1,6 @@
 const { body } = require("express-validator");
 
+
 //validation for registration
 const regiserValidation = [
   body("name").notEmpty().trim().withMessage("Name is required"),
