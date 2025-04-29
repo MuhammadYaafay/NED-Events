@@ -9,7 +9,7 @@ const EventDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  // we would fetch this based on the ID from the backend - > database
+  // Mock event data - in a real app, you would fetch this based on the ID
   const event = {
     id: id,
     name: "Summer Craft Fair",

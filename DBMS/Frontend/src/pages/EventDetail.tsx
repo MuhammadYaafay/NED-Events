@@ -37,6 +37,8 @@ import {
 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import PageTransition from '@/components/PageTransition';
+import VendorRequestForm from '@/components/VendorRequestForm';
+
 const eventData = {
   id: "2",
   title: "Annual Tech Conference 2025",
@@ -532,7 +534,13 @@ const EventDetail = () => {
                         Book Stall
                       </Button>
                     </DialogTrigger>
-                    
+                    <DialogContent className="sm:max-w-md">
+                      <VendorRequestForm 
+                        eventId={event.id} 
+                        eventName={event.title} 
+                        onClose={handleStallRequestClose} 
+                      />
+                    </DialogContent>
                   </Dialog>
                 )}
                 

@@ -1,50 +1,82 @@
+
 import { Link } from 'react-router-dom';
-import { Facebook, Twitter, Instagram } from 'lucide-react';
+import { Facebook, Twitter, Instagram, Mail, MessageCircle, Phone } from 'lucide-react';
 
 const Footer = () => {
   return (
     <footer className="bg-black/50 backdrop-blur-md border-t border-gray-800">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex flex-col items-center text-center space-y-10">
-          {/* Logo & Description */}
-          <div>
-            <Link to="/" className="text-2xl font-bold">
-              <span className="text-primary">Pulse</span>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
+          <div className="space-y-4">
+            <Link to="/" className="text-xl font-bold">
+              <span className="text-primary">NED </span>
               <span>Events</span>
             </Link>
-            <p className="text-sm text-gray-400 mt-4 max-w-md">
+            <p className="text-sm text-gray-400 mt-4">
               Premium event management platform for creating unforgettable experiences.
             </p>
+            <div className="flex space-x-4 mt-6">
+              <a href="#" className="text-gray-400 hover:text-primary transition-colors">
+                <Facebook className="h-5 w-5" />
+              </a>
+              <a href="#" className="text-gray-400 hover:text-primary transition-colors">
+                <Twitter className="h-5 w-5" />
+              </a>
+              <a href="#" className="text-gray-400 hover:text-primary transition-colors">
+                <Instagram className="h-5 w-5" />
+              </a>
+            </div>
           </div>
-
-          {/* Navigation Links */}
-          <div className="flex flex-row sm:flex-row space-y-4 sm:space-y-0 sm:space-x-12">
-            <Link to="/events" className="text-gray-400 hover:text-primary text-sm transition-colors">
-              Browse Events
-            </Link>
-            <Link to="/create-event" className="text-gray-400 hover:text-primary text-sm transition-colors">
-              Create Event
-            </Link>
+          
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-wider mb-4">Platform</h3>
+            <ul className="space-y-2">
+              <li><Link to="/events" className="text-gray-400 hover:text-primary text-sm transition-colors">Browse Events</Link></li>
+              <li><Link to="/create-event" className="text-gray-400 hover:text-primary text-sm transition-colors">Create Event</Link></li>
+              <li><Link to="#" className="text-gray-400 hover:text-primary text-sm transition-colors">Pricing</Link></li>
+              <li><Link to="#" className="text-gray-400 hover:text-primary text-sm transition-colors">Virtual Events</Link></li>
+              <li><Link to="#" className="text-gray-400 hover:text-primary text-sm transition-colors">For Organizers</Link></li>
+            </ul>
           </div>
-
-          {/* Social Icons */}
-          <div className="flex space-x-4">
-            <a href="#" className="text-gray-400 hover:text-primary transition-colors">
-              <Facebook className="h-5 w-5" />
-            </a>
-            <a href="#" className="text-gray-400 hover:text-primary transition-colors">
-              <Twitter className="h-5 w-5" />
-            </a>
-            <a href="#" className="text-gray-400 hover:text-primary transition-colors">
-              <Instagram className="h-5 w-5" />
-            </a>
+          
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-wider mb-4">Company</h3>
+            <ul className="space-y-2">
+              <li><Link to="#" className="text-gray-400 hover:text-primary text-sm transition-colors">About Us</Link></li>
+              <li><Link to="#" className="text-gray-400 hover:text-primary text-sm transition-colors">Careers</Link></li>
+              <li><Link to="#" className="text-gray-400 hover:text-primary text-sm transition-colors">Blog</Link></li>
+              <li><Link to="#" className="text-gray-400 hover:text-primary text-sm transition-colors">Press</Link></li>
+              <li><Link to="#" className="text-gray-400 hover:text-primary text-sm transition-colors">Partners</Link></li>
+            </ul>
           </div>
-
-          {/* Copyright */}
-          <div className="pt-6 border-t border-gray-800 w-full">
-            <p className="text-xs text-gray-400 mt-6">
-              &copy; {new Date().getFullYear()} Pulse Events. All rights reserved.
-            </p>
+          
+          <div>
+            <h3 className="text-sm font-semibold uppercase tracking-wider mb-4">Support</h3>
+            <ul className="space-y-4">
+              <li className="flex items-center text-gray-400 text-sm">
+                <Mail className="h-4 w-4 mr-2 text-primary" />
+                <span>support@NEDevents.com</span>
+              </li>
+              <li className="flex items-center text-gray-400 text-sm">
+                <Phone className="h-4 w-4 mr-2 text-primary" />
+                <span>+1 (888) 123-4567</span>
+              </li>
+              <li className="flex items-center text-gray-400 text-sm">
+                <MessageCircle className="h-4 w-4 mr-2 text-primary" />
+                <span>Live Chat (9AM-5PM EST)</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+        
+        <div className="mt-12 pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center">
+          <p className="text-xs text-gray-400">
+            &copy; {new Date().getFullYear()} NED Events. All rights reserved.
+          </p>
+          <div className="mt-4 md:mt-0 flex space-x-6">
+            <Link to="#" className="text-xs text-gray-400 hover:text-primary transition-colors">Privacy Policy</Link>
+            <Link to="#" className="text-xs text-gray-400 hover:text-primary transition-colors">Terms of Service</Link>
+            <Link to="#" className="text-xs text-gray-400 hover:text-primary transition-colors">Cookie Policy</Link>
           </div>
         </div>
       </div>

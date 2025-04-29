@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from "@/hooks/use-toast";
 
 // Define types for our context
-type UserRole = 'attendee' | 'vendor' | 'organizer';
+type UserRole = 'attendee' | 'vendor' | 'organizer' | 'admin';
 
 type User = {
   id: string;
@@ -123,7 +123,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       toast({
         title: "Account created successfully",
-        description: `Welcome to Pulse Events, ${name}!`,
+        description: `Welcome to NED Events, ${name}!`,
       });
     } catch (error) {
       toast({
