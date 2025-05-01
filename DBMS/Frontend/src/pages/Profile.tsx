@@ -36,8 +36,6 @@ import {
 } from "@/components/ui/table";
 import PageTransition from '@/components/PageTransition';
 
-/// this is hard coded data starting
-
 // Mock data for event history
 const mockEventHistory = [
   {
@@ -90,7 +88,6 @@ const mockFavoriteEvents = [
     price: "$149.99"
   }
 ];
-// hard coded data ends here.....
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -134,7 +131,7 @@ const Profile = () => {
           <TabsList className="grid grid-cols-2 md:grid-cols-3 w-full">
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="events">My Events</TabsTrigger>
-            <TabsTrigger value="favorites">Bookmark Events</TabsTrigger>
+            <TabsTrigger value="favorites">Favorite Events</TabsTrigger>
           </TabsList>
 
           <TabsContent value="profile" className="mt-6">
@@ -284,7 +281,7 @@ const Profile = () => {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle>Bookmark Events</CardTitle>
+                  <CardTitle>Favorite Events</CardTitle>
                   <CardDescription>Events you've bookmarked for future reference</CardDescription>
                 </div>
                 <Heart className="h-5 w-5 text-muted-foreground" />

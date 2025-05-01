@@ -65,6 +65,9 @@ const login = async (req, res) => {
     const user = users[0];
 
     //check password
+    // inpPassword is the password that user entered in the login form
+    // hashedPassword is the password that is stored in the database
+
     const isValidPassword = await comparePassword(password, user.password);
     if (!isValidPassword) {
       return res.status(400).json({ message: "Invalid password" });
@@ -73,7 +76,7 @@ const login = async (req, res) => {
     //generate jwt
     const token = jwt.sign(
       {
-        id: user.id,
+        id: user.user_id, //this was set to user.id which is not in our db column(in our db there is user_id) so that is why in token the id for user was not generated
         role: user.role,
       },
       process.env.JWT_SECRET_KEY,
@@ -83,12 +86,13 @@ const login = async (req, res) => {
     res.json({
       token,
       user: {
-        id: user.id,
+        id: user.user_id,
         name: user.name,
         email: user.email,
         role: user.role,
       },
     });
+
   } catch (error) {
     console.error("login error", error);
     res.status(500).json({ message: "Internal Server Error" });
@@ -97,8 +101,9 @@ const login = async (req, res) => {
 
 const getProfile = async (req, res) => {
   try {
-    const [users] = await pool.query(
-      `SELECT id, name, email, role, image_url, created_at FROM users WHERE id = ?`,
+    const [users] = await db.query(
+
+      `SELECT user_id, name, email, role, profile_image, created_at FROM users WHERE user_id = ?`,
       [req.user.id]
     );
 
@@ -110,6 +115,7 @@ const getProfile = async (req, res) => {
   } catch (error) {
     console.error("get profile error", error);
     res.status(500).json({ message: "Internal Server Error" });
+    
   }
 };
 

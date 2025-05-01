@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { Calendar as  Search, X, ChevronDown, SlidersHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar as CalendarIcon, Search, X, Filter, ChevronDown, SlidersHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
 import EventCard from '@/components/EventCard';
 import PageTransition from '@/components/PageTransition';
 

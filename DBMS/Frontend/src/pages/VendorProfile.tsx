@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Package,  Clock, LogOut, Settings } from 'lucide-react';
+import { Package, Calendar, Clock, LogOut, Settings } from 'lucide-react';
 import ProductsSection from '@/components/vendor-profile/ProductsSection';
 import EventsSection from '@/components/vendor-profile/EventsSection';
 import RequestHistorySection from '@/components/vendor-profile/RequestHistorySection';
@@ -65,14 +65,21 @@ const VendorProfile = () => {
                     <Package className="mr-2 h-4 w-4 flex-shrink-0" />
                     <span className="truncate">Products</span>
                   </Button>
-                  
+                  <Button 
+                    variant={activeTab === "events" ? "default" : "ghost"} 
+                    className="w-full justify-start truncate"
+                    onClick={() => handleTabChange("events")}
+                  >
+                    <Calendar className="mr-2 h-4 w-4 flex-shrink-0" />
+                    <span className="truncate">Events</span>
+                  </Button>
                   <Button 
                     variant={activeTab === "history" ? "default" : "ghost"} 
                     className="w-full justify-start truncate"
                     onClick={() => handleTabChange("history")}
                   >
                     <Clock className="mr-2 h-4 w-4 flex-shrink-0" />
-                    <span className="truncate">Stall Booking requests</span>
+                    <span className="truncate">Stall Booking Request History</span>
                     <Badge className="ml-auto flex-shrink-0">{vendorData.requestHistory.filter(r => r.status === "pending").length}</Badge>
                   </Button>
                   <Button 

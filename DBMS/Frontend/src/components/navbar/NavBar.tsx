@@ -54,7 +54,7 @@ const NavBar = () => {
               to="/" 
               className="text-xl font-bold text-white flex items-center group"
             >
-              <span className="text-primary mr-1">Pulse</span>
+              <span className="text-primary mr-1">NED</span>
               <span className="group-hover:text-primary transition-colors duration-300">Events</span>
             </Link>
           </div>
