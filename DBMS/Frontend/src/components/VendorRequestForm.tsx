@@ -49,7 +49,7 @@ const VendorRequestForm = ({ eventId, eventName, onClose }: VendorRequestFormPro
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="boothSize">Booth Size</Label>
+            <Label htmlFor="boothSize">Stall Size</Label>
             <select 
               id="boothSize"
               value={boothSize}
