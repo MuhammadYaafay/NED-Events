@@ -74,19 +74,24 @@ const createEvent = async (req, res) => {
 };
 
 //get list of all events for browsing
-//tentative
 const getAllEvents = async (req, res) => {
   try {
-
     const [allEvents] = await db.query(
-      "SELECT * FROM events where status ='upcoming'"
-    )
-    res.json([allEvents])
+      "SELECT * FROM events WHERE status = 'upcoming'"
+    );
 
-  } catch (error) { }
-  console.error("Error fetching events:", error);
-  res.status(500).json({ message: "Internal Server Error" });
-}
+    if (!allEvents.length) {
+      return res.status(404).json({ message: "No upcoming events found" });
+    }
+
+    res.json(allEvents); 
+
+  } catch (error) {
+    console.error("Error fetching events:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 
 //get details of a individual event
 const getEventById = async (req, res) => {
@@ -171,7 +176,9 @@ const deleteEvent = async (req, res) => {
   }
 };
 
-
+const getAllEventsByOrganizer=async (req,res) => {
+  //select all from events where organizer_id = req.params
+}
 
 
 module.exports = {
@@ -179,5 +186,6 @@ module.exports = {
   getAllEvents,
   getEventById,
   updateEvent,
-  deleteEvent
+  deleteEvent,
+  getAllEventsByOrganizer
 };
