@@ -12,16 +12,34 @@ import { Eye, EyeOff, User, Store, LayoutDashboard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
 import PageTransition from '@/components/PageTransition';
+import { apiRequest } from '@/utils/apiUtils';
+import { setAuthToken } from '@/utils/authUtils';
+
+const login = async (
+  email: string,
+  password: string,
+): Promise<{ token: string; user: unknown }> => {
+  const response = await apiRequest<{ token: string; user: any }>("/api/auth/login", {
+    method: "POST",
+    body: { email, password },
+    headers: {
+      "Content-Type": "application/json"
+    }
+  });
+
+  // Save token for authenticated routes
+  setAuthToken(response.token);
+  return response;
+}
 
 const Login = () => {
+  const { setUser } = useAuth(); // Get setUser from auth context
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [userRole, setUserRole] = useState<'attendee' | 'vendor' | 'organizer'>('attendee');
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { login } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,22 +56,28 @@ const Login = () => {
     setIsLoading(true);
     
     try {
-      await login(email, password, userRole);
+      const { user } = await login(email, password);
+      
+      // Update user in auth context
+      if (setUser) {
+        setUser(user);
+      }
       
       toast({
         title: "Success",
-        description: `Logged in successfully as ${userRole}`,
+        description: `Logged in successfully as ${user.role}`,
       });
       
       // Redirect based on user role
-      if (userRole === 'vendor') {
+      if (user.role === 'vendor') {
         navigate('/vendor-profile');
-      } else if (userRole === 'organizer') {
+      } else if (user.role === 'organizer') {
         navigate('/organizer-dashboard');
       } else {
         navigate('/profile');
       }
     } catch (error) {
+      console.error('Login error:', error);
       toast({
         title: "Error",
         description: "Failed to log in. Please check your credentials.",
@@ -117,60 +141,6 @@ const Login = () => {
                     )}
                   </Button>
                 </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Login as</Label>
-                <RadioGroup 
-                  value={userRole} 
-                  onValueChange={(value) => setUserRole(value as 'attendee' | 'vendor' | 'organizer')}
-                  className="grid grid-cols-3 gap-4"
-                >
-                  <div>
-                    <RadioGroupItem 
-                      value="attendee" 
-                      id="attendee" 
-                      className="peer sr-only" 
-                    />
-                    <Label
-                      htmlFor="attendee"
-                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-transparent p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                    >
-                      <User className="mb-2 h-5 w-5" />
-                      Attendee
-                    </Label>
-                  </div>
-                  
-                  <div>
-                    <RadioGroupItem 
-                      value="vendor" 
-                      id="vendor" 
-                      className="peer sr-only" 
-                    />
-                    <Label
-                      htmlFor="vendor"
-                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-transparent p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                    >
-                      <Store className="mb-2 h-5 w-5" />
-                      Vendor
-                    </Label>
-                  </div>
-                  
-                  <div>
-                    <RadioGroupItem 
-                      value="organizer" 
-                      id="organizer" 
-                      className="peer sr-only" 
-                    />
-                    <Label
-                      htmlFor="organizer"
-                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-transparent p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
-                    >
-                      <LayoutDashboard className="mb-2 h-5 w-5" />
-                      Organizer
-                    </Label>
-                  </div>
-                </RadioGroup>
               </div>
               
             </CardContent>

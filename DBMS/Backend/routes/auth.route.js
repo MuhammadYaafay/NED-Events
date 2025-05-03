@@ -3,6 +3,7 @@ const {
   register,
   login,
   getProfile,
+  logout,
 } = require("../controller/auth.controller");
 const { verifyToken } = require("../middlewares/auth.middleware");
 const {
@@ -15,6 +16,6 @@ const router = express.Router();
 router.post("/register", regiserValidation, register);
 router.post("/login", loginValidation, login);
 router.get("/profile", verifyToken, getProfile);
-
+router.get("/logout", verifyToken, logout);
 
 module.exports = router;
