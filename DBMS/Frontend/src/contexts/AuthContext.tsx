@@ -1,163 +1,204 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { toast } from "@/hooks/use-toast";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+  type FC,
+} from "react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/utils/apiUtils";
+import { removeAuthToken, setAuthToken, type User } from "@/utils/authUtils";
+import { useNavigate } from "react-router-dom";
 
-// Define types for our context
-type UserRole = 'attendee' | 'vendor' | 'organizer' | 'admin';
 
-type User = {
-  id: string;
-  name: string;
-  email: string;
-  image?: string;
-  role: UserRole;
-};
-
-type AuthContextType = {
+interface AuthContextType {
   user: User | null;
-  isAuthenticated: boolean;
-  login: (email: string, password: string, role: UserRole) => Promise<void>;
-  signup: (name: string, email: string, password: string, role: UserRole) => Promise<void>;
-  logout: () => void;
-};
+  setUser: (user: User | null) => void;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  register: (
+    name: string,
+    email: string,
+    password: string,
+    role: string,
+  ) => Promise<void>;
+  logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
+}
 
-// Create the context
+interface LoginResponse {
+  token: string;
+  user: User;
+  success: boolean;
+  message?: string;
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Sample user data for demonstration
-const sampleUsers: User[] = [
-  {
-    id: '1',
-    name: 'John Doe',
-    email: 'john@example.com',
-    image: 'https://github.com/shadcn.png',
-    role: 'attendee',
-  },
-  {
-    id: '2',
-    name: 'Jane Smith',
-    email: 'jane@example.com',
-    image: 'https://github.com/shadcn.png',
-    role: 'vendor',
-  },
-  {
-    id: '3',
-    name: 'Mike Johnson',
-    email: 'mike@example.com',
-    image: 'https://github.com/shadcn.png',
-    role: 'organizer',
-  },
-];
-
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Check if user is already logged in (from localStorage in this example)
-  useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-      setIsAuthenticated(true);
-    }
-  }, []);
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  // Login function
-  const login = async (email: string, password: string, role: UserRole) => {
+  const refreshUser = async () => {
     try {
-      // In a real app, this would be an API call to your backend
-      // For now, we'll simulate a successful login with our sample users
-      const foundUser = sampleUsers.find(u => u.email === email);
-      
-      if (foundUser) {
-        // Update the user's role based on the selection
-        const userWithSelectedRole = { ...foundUser, role };
-        setUser(userWithSelectedRole);
-        setIsAuthenticated(true);
-        localStorage.setItem('user', JSON.stringify(userWithSelectedRole));
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setUser(null);
+        return;
+      }
+
+      try {
+        const userData = await apiRequest("/api/auth/getProfile", {
+          authenticated: true,
+        }) as User;
+        setUser(userData);
+      } catch (error) {
+        // Handle unauthorized errors silently
+        if (error instanceof Error && error.message.includes("401")) {
+          localStorage.removeItem("token");
+          setAuthToken("");
+          setUser(null);
+          return;
+        }
         
-        toast({
-          title: "Login successful",
-          description: `Welcome back, ${foundUser.name}!`,
-        });
-      } else {
-        // For demo purposes, create a new user if not found
-        const newUser: User = {
-          id: String(sampleUsers.length + 1),
-          name: email.split('@')[0],
-          email,
-          role,
-        };
-        setUser(newUser);
-        setIsAuthenticated(true);
-        localStorage.setItem('user', JSON.stringify(newUser));
-        
-        toast({
-          title: "Login successful",
-          description: `Welcome, ${newUser.name}!`,
-        });
+        // Log other errors but don't throw them
+        console.error("Error refreshing user:", error);
+        setUser(null);
       }
     } catch (error) {
-      toast({
-        title: "Login failed",
-        description: "Please check your credentials and try again.",
-        variant: "destructive",
-      });
+      // Handle any unexpected errors
+      console.error("Unexpected error in refreshUser:", error);
+      setUser(null);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Signup function
-  const signup = async (name: string, email: string, password: string, role: UserRole) => {
+  const register = async (
+    name: string,
+    email: string,
+    password: string,
+    role: string,
+  ) => {
     try {
-      // In a real app, this would be an API call to your backend
-      const newUser: User = {
-        id: String(sampleUsers.length + 1),
-        name,
-        email,
-        role,
-      };
+      const response = (await apiRequest("/api/auth/register", {
+        method: "POST",
+        body: { 
+          name, 
+          email, 
+          password, 
+          role
+        },
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })) as LoginResponse;
       
-      setUser(newUser);
-      setIsAuthenticated(true);
-      localStorage.setItem('user', JSON.stringify(newUser));
-      
+      if (response.success) {
+        toast({
+          title: "Registration successful",
+          description: "You have been registered successfully. Please login to continue.",
+        });
+        navigate("/login", { replace: true });
+      } else {
+        throw new Error(response.message || "Registration failed");
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
       toast({
-        title: "Account created successfully",
-        description: `Welcome to NED Events, ${name}!`,
+        variant: "destructive",
+        title: "Registration failed",
+        description: error instanceof Error ? error.message : "An error occurred during registration.",
+      });
+      throw error;
+    }
+  };
+
+  const login = async (email: string, password: string) => {
+    try {
+      const response = (await apiRequest("/api/auth/login", {
+        method: "POST",
+        body: { email, password },
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })) as LoginResponse;
+      
+      if (response.success) {
+        const token = response.token;
+        localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(response.user));
+        setUser(response.user);
+        navigate("/");
+        toast({
+          title: "Login successful",
+          description: "Welcome back!",
+        });
+      } else {
+        throw new Error(response.message || "Login failed");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      toast({
+        variant: "destructive",
+        title: "Login failed",
+        description: error instanceof Error ? error.message : "An error occurred during login",
+      });
+      throw error;
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await removeAuthToken();
+      setUser(null);
+      navigate("/login");
+      toast({
+        title: "Logged out successfully",
+        description: "You have been logged out.",
       });
     } catch (error) {
+      console.error("Error logging out:", error);
       toast({
-        title: "Sign up failed",
-        description: "An error occurred during sign up. Please try again.",
         variant: "destructive",
+        title: "Logout failed",
+        description: "An error occurred while trying to log out.",
       });
     }
   };
 
-  // Logout function
-  const logout = () => {
-    setUser(null);
-    setIsAuthenticated(false);
-    localStorage.removeItem('user');
-    
-    toast({
-      title: "Logged out successfully",
-      description: "You've been logged out of your account.",
-    });
-  };
+  useEffect(() => {
+    const checkAuth = async () => {
+      setLoading(true);
+      try {
+        await refreshUser();
+      } catch (error) {
+        console.error("Error in checkAuth:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkAuth();
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, signup, logout }}>
+    <AuthContext.Provider
+      value={{ user, loading, setUser, register, login, logout, refreshUser }}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
 
-// Create a custom hook for using the auth context
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };

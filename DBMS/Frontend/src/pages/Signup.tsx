@@ -12,6 +12,25 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
 import PageTransition from '@/components/PageTransition';
 
+import { apiRequest } from "@/utils/apiUtils"; 
+import { setAuthToken } from "@/utils/authUtils";
+
+const signup = async (
+  name: string,
+  email: string,
+  password: string,
+  role: "attendee" | "vendor" | "organizer"
+): Promise<void> => {
+  const response = await apiRequest<{ token: string }>("/api/auth/register", {
+    method: "POST",
+    body: { name, email, password, role },
+  });
+
+  // Save token for authenticated routes
+  setAuthToken(response.token);
+};
+
+
 const Signup = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -22,7 +41,6 @@ const Signup = () => {
   const [userRole, setUserRole] = useState<'attendee' | 'vendor' | 'organizer'>('attendee');
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { signup } = useAuth();
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,14 +73,7 @@ const Signup = () => {
         description: "Account created successfully",
       });
       
-      // Redirect based on user role
-      if (userRole === 'vendor') {
-        navigate('/vendor-profile');
-      } else if (userRole === 'organizer') {
-        navigate('/organizer-dashboard');
-      } else {
-        navigate('/profile');
-      }
+      navigate("/login");
     } catch (error) {
       toast({
         title: "Error",

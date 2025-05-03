@@ -119,8 +119,21 @@ const getProfile = async (req, res) => {
   }
 };
 
+const logout = async (req, res) => {
+  try {
+    console.log(`User ${req.user.id} logged out`);
+    // No need to remove token on server (client handles that)
+    res.status(200).json({ message: "Logged out successfully" });
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
 module.exports = {
   register,
   login,
   getProfile,
+  logout,
 };

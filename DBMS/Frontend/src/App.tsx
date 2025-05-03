@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -35,10 +34,10 @@ import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <BrowserRouter>
+  <BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
           <NavBar />
           <Routes>
             <Route path="/" element={<Home />} />
@@ -49,7 +48,10 @@ const App = () => (
             <Route path="/signup" element={<Signup />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/vendor-profile" element={<VendorProfile />} />
-            <Route path="/organizer-dashboard" element={<OrganizerDashboard />} />
+            <Route
+              path="/organizer-dashboard"
+              element={<OrganizerDashboard />}
+            />
             <Route path="/confirm-payment" element={<ConfirmPayment />} />
             <Route path="/edit-product/:id" element={<EditProduct />} />
             <Route path="/add-product" element={<AddProduct />} />
@@ -58,25 +60,34 @@ const App = () => (
             <Route path="/book-stall" element={<BookStall />} />
             <Route path="/payment-methods" element={<PaymentMethods />} />
             <Route path="/receipt/:id" element={<Receipt />} />
-            
+
             {/* Routes for requested features */}
             <Route path="/event-management/:id" element={<EventManagement />} />
-            <Route path="/attendee-management/:id" element={<AttendeeManagement />} />
-            <Route path="/analytics-dashboard/:id" element={<AnalyticsDashboard />} />
-            
+            <Route
+              path="/attendee-management/:id"
+              element={<AttendeeManagement />}
+            />
+            <Route
+              path="/analytics-dashboard/:id"
+              element={<AnalyticsDashboard />}
+            />
+
             {/* Temporary settings route redirection */}
-            <Route path="/settings" element={<Navigate to="/vendor-profile?tab=settings" replace />} />
-            
+            <Route
+              path="/settings"
+              element={<Navigate to="/vendor-profile?tab=settings" replace />}
+            />
+
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Footer />
           <Toaster />
           <Sonner />
           <FixTicketReservation />
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  </BrowserRouter>
 );
 
 export default App;
