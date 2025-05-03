@@ -152,6 +152,7 @@ CREATE TABLE
 
 CREATE TABLE
     ticket_payments (
+        id INT AUTO_INCREMENT PRIMARY KEY,
         payment_id INT NOT NULL,
         ticket_purchase_id INT NOT NULL,
         FOREIGN KEY (payment_id) REFERENCES payments (payment_id) ON DELETE CASCADE,
@@ -161,6 +162,7 @@ CREATE TABLE
 
 CREATE TABLE
     stall_payments (
+        id INT AUTO_INCREMENT PRIMARY KEY,
         payment_id INT NOT NULL,
         stall_booking_id INT NOT NULL,
         FOREIGN KEY (payment_id) REFERENCES payments (payment_id) ON DELETE CASCADE,
@@ -175,7 +177,6 @@ CREATE TABLE
         title VARCHAR(255),
         message TEXT,
         type VARCHAR(100),
-        is_read BOOLEAN DEFAULT FALSE,
         read_at DATETIME,
         is_read BOOLEAN DEFAULT FALSE, --notification will die when this gets true
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
