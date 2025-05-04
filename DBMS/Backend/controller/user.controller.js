@@ -1,14 +1,6 @@
 const db = require("../config/dbConnection.js");
 const { validationResult } = require("express-validator");
-// const jwt = require("jsonwebtoken");
-// const token = jwt.sign(
-//   {
-//     id: user.user_id, //this was set to user.id which is not in our db column(in our db there is user_id) so that is why in token the id for user was not generated
-//     role: user.role,
-//   },
-//   process.env.JWT_SECRET_KEY,
-//   { expiresIn: "24h" }
-// );
+
 const updateUserDetails = async (req, res) => {
     try {
       const errors = validationResult(req);
