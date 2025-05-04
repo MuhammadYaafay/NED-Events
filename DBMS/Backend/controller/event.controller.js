@@ -93,7 +93,7 @@ const getAllEvents = async (req, res) => {
 };
 
 
-//get details of a individual event
+//get details of a individual event/view event
 const getEventById = async (req, res) => {
   try {
    //from route
@@ -120,9 +120,6 @@ const getEventById = async (req, res) => {
   }
 };
 
-
-
-
 const updateEvent = async (req, res) => {
   try {
     // Check if logged-in user is the organizer of this event
@@ -133,7 +130,6 @@ const updateEvent = async (req, res) => {
     // Handle and log error
   }
 };
-
 
 const deleteEvent = async (req, res) => {
   try {
@@ -178,7 +174,30 @@ const deleteEvent = async (req, res) => {
 
 const getAllEventsByOrganizer=async (req,res) => {
   //select all from events where organizer_id = req.params
+  try{
+  const { organizerId } = req.params;
+
+    if (!organizerId) {
+      return res.status(400).json({ message: "Organizer ID is required" });
+    }
+
+    //get event details
+    const [eventRows] = await db.query(
+      "SELECT * FROM events WHERE organizer_id = ?",
+      [organizerId]
+    );
+
+    if (eventRows.length === 0) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+    res.status(200).json(eventRows[0]);
+  }   
+  catch (error) {
+    console.error("Error fetching event:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
 }
+
 
 
 module.exports = {
