@@ -9,16 +9,16 @@ CREATE TABLE
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     );
-
-CREATE TABLE
-    user_profiles (
-        profile_id INT AUTO_INCREMENT PRIMARY KEY,
-        user_id INT NOT NULL,
-        bio TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE
-    );
+-- this table is been removed from the original schema;
+-- CREATE TABLE
+--     user_profiles (
+--         profile_id INT AUTO_INCREMENT PRIMARY KEY,
+--         user_id INT NOT NULL,
+--         bio TEXT,
+--         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+--         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+--         FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE
+--     );
 
 CREATE TABLE
     events (
