@@ -26,7 +26,7 @@ const createEvent = async (req, res) => {
 
     const organizerId = req.user.id;
 
-    if (!title || !start_date || !end_date || !location || ticket_price === undefined || ticket_max_quantity === undefined, hasStall === undefined) {
+    if (!title || !start_date || !end_date || !location || ticket_price === undefined || ticket_max_quantity === undefined|| hasStall === undefined) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
@@ -56,8 +56,8 @@ const createEvent = async (req, res) => {
         `INSERT INTO stalls (event_id, size, price, max_quantity) VALUES (?, ?, ?, ?)`,
         [eventId, stall_size, parseInt(stall_price), stall_max_quantity]
       );
+      stallId = stallResult.insertId;
     }
-    stallId = stallResult.insertId;
 
     // success msg 
 
@@ -120,16 +120,43 @@ const getEventById = async (req, res) => {
   }
 };
 
+
 const updateEvent = async (req, res) => {
   try {
-    // Check if logged-in user is the organizer of this event
-    // Validate input data
-    // Update the event fields (title, date, etc.)
-    // Return success response
+    const eventId = req.params.id;
+    const organizerId = req.user.id; 
+    const { title, description, location, start_date,end_date, status } = req.body;
+
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: errors.array() });
+    }
+
+    const [existingEvent] = await db.query(
+      "SELECT event_id FROM events WHERE event_id = ? AND organizer_id = ?",
+      [eventId, organizerId]
+    );
+
+    if (existingEvent.length === 0) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    await db.query(
+      `UPDATE events 
+       SET title = ?, description = ?, location = ?, start_date = ?, end_date = ?, status = ?
+       WHERE event_id = ?`,
+      [title, description, location, start_date, end_date, status, eventId]
+    );
+    
+
+    res.json({ message: "Event updated successfully." });
+
   } catch (error) {
-    // Handle and log error
+    console.error("Error updating event:", error);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
 
 const deleteEvent = async (req, res) => {
   try {
@@ -190,7 +217,7 @@ const getAllEventsByOrganizer=async (req,res) => {
     if (eventRows.length === 0) {
       return res.status(404).json({ message: "Event not found" });
     }
-    res.status(200).json(eventRows[0]);
+    res.status(200).json(eventRows);
   }   
   catch (error) {
     console.error("Error fetching event:", error);
