@@ -9,6 +9,8 @@ const {
   updateVendorProducts,
   deleteVendorProducts,
   getVendorEvents,
+  addStall,
+  addVendorProducts,
 } = require("../controller/stall.controller");
 const {
   verifyToken,
@@ -17,6 +19,10 @@ const {
 } = require("../middlewares/auth.middleware");
 
 const router = express.Router();
+
+router.post("/addVendorProducts", verifyToken, isVendor, addVendorProducts);
+
+router.post('/addStalls/:event_id', verifyToken, isOrganizer, addStall);
 
 router.post(
   "/requestStallBooking/:event_id",
@@ -33,14 +39,14 @@ router.get(
 );
 
 router.patch(
-  "/confirmStalls/:vendor_id",
+  "/confirmStalls/:booking_id",
   verifyToken,
   isOrganizer,
   approveStallBooking
 );
 
 router.patch(
-  "/cancelStalls/:vendor_id",
+  "/cancelStalls/:booking_id",
   verifyToken,
   isOrganizer,
   rejectStallBooking
