@@ -1,7 +1,6 @@
 const { validationResult } = require("express-validator");
 const db = require("../config/dbConnection");
 
-
 const createEvent = async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -16,27 +15,45 @@ const createEvent = async (req, res) => {
       end_date,
       location,
       image,
-      ticket_price,   //will be zero for unpaid
+      ticket_price, //will be zero for unpaid
       ticket_max_quantity,
-      hasStall,       //frontend validation will ensure no other stall-related stuff makes here unless this is true
+      has_stall, //frontend validation will ensure no other stall-related stuff makes here unless this is true
       stall_price,
-      stall_size,
-      stall_max_quantity
+      // stall_size, this is in stall booking table
+      stall_max_quantity,
+      capacity,
     } = req.body;
 
     const organizerId = req.user.id;
 
-    if (!title || !start_date || !end_date || !location || ticket_price === undefined || ticket_max_quantity === undefined|| hasStall === undefined) {
+    if (
+      !title ||
+      !start_date ||
+      !end_date ||
+      !location ||
+      ticket_price === undefined ||
+      ticket_max_quantity === undefined ||
+      has_stall === undefined
+    ) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
     const [eventResult] = await db.query(
-      `INSERT INTO events (title, description, start_date, end_date, location, organizer_id, image)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [title, description, start_date, end_date, location, organizerId, image || null]
+      `INSERT INTO events (title, description, start_date, end_date, location, organizer_id, image, capacity)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        title,
+        description,
+        start_date,
+        end_date,
+        location,
+        organizerId,
+        image || null,
+        capacity,
+      ]
     );
 
-    //event has been made in event table but ticket needs to be made too 
+    //event has been made in event table but ticket needs to be made too
     const eventId = eventResult.insertId;
 
     const [ticketResult] = await db.query(
@@ -48,24 +65,24 @@ const createEvent = async (req, res) => {
 
     //if stalls and vendors are to be created:
     let stallId = null;
-    if (hasStall) {
-      if (!stall_price || !stall_size || !stall_max_quantity) {
+    if (has_stall) {
+      if (!stall_price || !stall_max_quantity) {
         return res.status(400).json({ message: "Stall details missing" });
       }
       const [stallResult] = await db.query(
-        `INSERT INTO stalls (event_id, size, price, max_quantity) VALUES (?, ?, ?, ?)`,
-        [eventId, stall_size, parseInt(stall_price), stall_max_quantity]
+        `INSERT INTO stalls (event_id, price, max_quantity) VALUES (?, ?, ?)`,
+        [eventId, parseInt(stall_price), stall_max_quantity]
       );
       stallId = stallResult.insertId;
     }
 
-    // success msg 
+    // success msg
 
     res.status(201).json({
       message: "Event created successfully",
       eventId,
       ticketId,
-      stallId
+      stallId,
     });
   } catch (error) {
     console.error("Error creating event:", error);
@@ -77,55 +94,144 @@ const createEvent = async (req, res) => {
 const getAllEvents = async (req, res) => {
   try {
     const [allEvents] = await db.query(
-      "SELECT * FROM events WHERE status = 'upcoming'"
+      `
+      SELECT 
+        e.event_id,
+        e.title,
+        e.description,
+        e.start_date,
+        e.end_date,
+        e.start_time,
+        e.end_time,
+        e.location,
+        e.organizer_id,
+        e.capacity,
+        e.status,
+        e.image,
+        e.created_at,
+        e.updated_at,
+        t.ticket_id,
+        t.price AS ticket_price
+      FROM events e
+      JOIN tickets t ON t.event_id = e.event_id
+      `
     );
 
     if (!allEvents.length) {
       return res.status(404).json({ message: "No upcoming events found" });
     }
 
-    res.json(allEvents); 
-
+    res.json(allEvents);
   } catch (error) {
     console.error("Error fetching events:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
+//get trending events which have been booked the most
+const getTrendingEvents = async (req, res) => {
+  try {
+    const [trendingEvents] = await db.query(
+      `
+      SELECT 
+        e.event_id,
+        e.title,
+        e.description,
+        e.start_date,
+        e.end_date,
+        e.location,
+        e.organizer_id,
+        e.capacity,
+        e.status,
+        e.image,
+        t.price AS ticket_price,
+        COUNT(tp.user_id) AS booking_count
+      FROM events e
+      JOIN tickets t ON t.event_id = e.event_id
+      JOIN ticket_purchases tp ON tp.ticket_id = t.ticket_id
+      WHERE e.status = 'upcoming'
+      GROUP BY 
+        e.event_id,
+        e.title,
+        e.description,
+        e.start_date,
+        e.end_date,
+        e.location,
+        e.organizer_id,
+        e.capacity,
+        e.status,
+        e.image,
+        t.price
+      ORDER BY booking_count DESC
+      LIMIT 5
+      `
+    );
+
+    if (!trendingEvents.length) {
+      return res.status(404).json({ message: "No trending events found" });
+    }
+
+    res.json(trendingEvents);
+  } catch (error) {
+    console.error("Error fetching trending events:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 
 //get details of a individual event/view event
 const getEventById = async (req, res) => {
   try {
-   //from route
+    //from route
     const { eventid } = req.params;
-
-    if (!eventid) {
-      return res.status(400).json({ message: "Event ID is required" });
-    }
 
     //get event details
     const [eventRows] = await db.query(
-      "SELECT * FROM events WHERE event_id = ?",
+      `
+      SELECT 
+        e.event_id,
+        e.title,
+        e.description,
+        e.start_date,
+        e.end_date,
+        e.location,
+        e.organizer_id,
+        e.capacity,
+        e.status,
+        e.image,
+        e.created_at,
+        e.updated_at,
+        t.ticket_id,
+        t.price AS ticket_price,
+        s.stall_id,
+        s.price AS stall_price,
+        CASE WHEN s.stall_id IS NOT NULL THEN 1 ELSE 0 END AS has_stall,
+        CASE WHEN t.ticket_id IS NOT NULL THEN 1 ELSE 0 END AS has_ticket
+      FROM events e
+      LEFT JOIN tickets t ON t.event_id = e.event_id
+      LEFT JOIN stalls s ON s.event_id = e.event_id
+      WHERE e.event_id = ?
+      LIMIT 1
+      `,
       [eventid]
-    );
+    ); // due to fetching ticket price i have to do this lambi
 
     if (eventRows.length === 0) {
       return res.status(404).json({ message: "Event not found" });
     }
 
-    res.status(200).json(eventRows[0]); 
+    res.status(200).json(eventRows[0]);
   } catch (error) {
     console.error("Error fetching event details:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
-
 const updateEvent = async (req, res) => {
   try {
     const eventId = req.params.id;
-    const organizerId = req.user.id; 
-    const { title, description, location, start_date,end_date, status } = req.body;
+    const organizerId = req.user.id;
+    const { title, description, location, start_date, end_date, status } =
+      req.body;
 
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -147,16 +253,13 @@ const updateEvent = async (req, res) => {
        WHERE event_id = ?`,
       [title, description, location, start_date, end_date, status, eventId]
     );
-    
 
     res.json({ message: "Event updated successfully." });
-
   } catch (error) {
     console.error("Error updating event:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
-
 
 const deleteEvent = async (req, res) => {
   try {
@@ -199,39 +302,50 @@ const deleteEvent = async (req, res) => {
   }
 };
 
-const getAllEventsByOrganizer=async (req,res) => {
-  //select all from events where organizer_id = req.params
-  try{
-  const { organizerId } = req.params;
+const getAllEventsByOrganizer = async (req, res) => {
+  try {
+    const { organizerId } = req.user;
 
     if (!organizerId) {
       return res.status(400).json({ message: "Organizer ID is required" });
     }
 
-    //get event details
+    // Get event details with total attendees (distinct users who purchased tickets)
     const [eventRows] = await db.query(
-      "SELECT * FROM events WHERE organizer_id = ?",
+      `
+      SELECT 
+        e.event_id,
+        e.title,
+        e.start_date,
+        COUNT(DISTINCT tp.user_id) AS total_attendees
+      FROM events e
+      JOIN tickets t ON t.event_id = e.event_id
+      LEFT JOIN ticket_purchases tp ON tp.ticket_id = t.ticket_id
+      WHERE e.organizer_id = ?
+      GROUP BY e.event_id
+      `,
       [organizerId]
     );
 
     if (eventRows.length === 0) {
-      return res.status(404).json({ message: "Event not found" });
+      return res.status(404).json({ message: "No events found for this organizer" });
     }
+
     res.status(200).json(eventRows);
-  }   
-  catch (error) {
-    console.error("Error fetching event:", error);
+  } catch (error) {
+    console.error("Error fetching events:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
-}
+};
 
 
 
 module.exports = {
   createEvent,
   getAllEvents,
+  getTrendingEvents,
   getEventById,
   updateEvent,
   deleteEvent,
-  getAllEventsByOrganizer
+  getAllEventsByOrganizer,
 };

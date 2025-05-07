@@ -1,4 +1,3 @@
-
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ interface DesktopNavigationProps {
 
 const DesktopNavigation = ({ location }: DesktopNavigationProps) => {
   const { user, isAuthenticated } = useAuth();
+  const isLoggedIn = isAuthenticated() && user;
 
   return (
     <div className="hidden md:flex items-center space-x-6">
@@ -23,7 +23,7 @@ const DesktopNavigation = ({ location }: DesktopNavigationProps) => {
         Browse Events
       </Link>
       
-      {isAuthenticated && user?.role === 'organizer' && (
+      {isLoggedIn && user?.role === 'organizer' && (
         <Link 
           to="/create-event" 
           className={`text-sm font-medium transition-colors hover:text-primary ${
@@ -36,7 +36,7 @@ const DesktopNavigation = ({ location }: DesktopNavigationProps) => {
       
       <div className="h-4 w-px bg-gray-700"></div>
       
-      {isAuthenticated ? (
+      {isLoggedIn ? (
         <UserMenuDropdown />
       ) : (
         <>

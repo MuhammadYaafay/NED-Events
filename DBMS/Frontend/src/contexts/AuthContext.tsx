@@ -1,4 +1,3 @@
-
 import React, {
   createContext,
   useContext,
@@ -9,7 +8,7 @@ import React, {
 } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/utils/apiUtils";
-import { removeAuthToken, setAuthToken, type User } from "@/utils/authUtils";
+import { removeAuthToken, setAuthToken, getAuthToken, type User } from "@/utils/authUtils";
 import { useNavigate } from "react-router-dom";
 
 
@@ -25,6 +24,7 @@ interface AuthContextType {
     role: string,
   ) => Promise<void>;
   logout: () => Promise<void>;
+  isAuthenticated: () => boolean;
   refreshUser: () => Promise<void>;
 }
 
@@ -46,7 +46,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   const refreshUser = async () => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("NEDevents-token");
       if (!token) {
         setUser(null);
         return;
@@ -60,7 +60,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       } catch (error) {
         // Handle unauthorized errors silently
         if (error instanceof Error && error.message.includes("401")) {
-          localStorage.removeItem("token");
+          localStorage.removeItem("NEDevents-token");
           setAuthToken("");
           setUser(null);
           return;
@@ -130,8 +130,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
       })) as LoginResponse;
       
       if (response.success) {
-        const token = response.token;
-        localStorage.setItem("token", token);
+        setAuthToken(response.token);
         localStorage.setItem("user", JSON.stringify(response.user));
         setUser(response.user);
         navigate("/");
@@ -155,13 +154,15 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   const logout = async () => {
     try {
+      setUser(null); // Set user to null first
       await removeAuthToken();
-      setUser(null);
-      navigate("/login");
+      localStorage.removeItem("NEDevents-token");
+      localStorage.removeItem("user");
       toast({
         title: "Logged out successfully",
         description: "You have been logged out.",
       });
+      navigate("/login", { replace: true }); // Use replace to prevent going back to authenticated state
     } catch (error) {
       console.error("Error logging out:", error);
       toast({
@@ -186,9 +187,14 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     checkAuth();
   }, []);
 
+  const isAuthenticated = () => {
+    return !!getAuthToken();
+  }
+
+
   return (
     <AuthContext.Provider
-      value={{ user, loading, setUser, register, login, logout, refreshUser }}
+      value={{ user, loading, isAuthenticated, setUser, register, login, logout, refreshUser }}
     >
       {children}
     </AuthContext.Provider>
@@ -202,3 +208,4 @@ export const useAuth = () => {
   }
   return context;
 };
+

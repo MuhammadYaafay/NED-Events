@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -8,18 +7,23 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { Eye, EyeOff, User, Store, LayoutDashboard } from "lucide-react";
+import { Eye, EyeOff, Store, LayoutDashboard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
 import PageTransition from '@/components/PageTransition';
 import { apiRequest } from '@/utils/apiUtils';
-import { setAuthToken } from '@/utils/authUtils';
+import { setAuthToken, type User } from '@/utils/authUtils';
+
+interface LoginResponse {
+  token: string;
+  user: User;
+}
 
 const login = async (
   email: string,
   password: string,
-): Promise<{ token: string; user: unknown }> => {
-  const response = await apiRequest<{ token: string; user: any }>("/api/auth/login", {
+): Promise<LoginResponse> => {
+  const response = await apiRequest<LoginResponse>("/api/auth/login", {
     method: "POST",
     body: { email, password },
     headers: {

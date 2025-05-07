@@ -51,6 +51,7 @@ CREATE TABLE
         image VARCHAR(255),
         ticket_id INT,
         stall_id INT,
+        has_stall BOOLEAN DEFAULT FALSE,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         -- FOREIGN KEY (stall_id) REFERENCES stalls (stall_id), -- this is not needed here bcz stall_id is not a part of events table it is a part of stalls table also it is creating a circular dependency

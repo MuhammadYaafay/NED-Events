@@ -163,22 +163,6 @@ const CreateEvent = () => {
                   </div>
                   
                   <div>
-                    <Label className="mb-1 block">Event Type</Label>
-                    <Tabs defaultValue="in-person" className="w-full" onValueChange={setEventType}>
-                      <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="in-person">
-                          <MapPin className="h-4 w-4 mr-2" />
-                          In Person
-                        </TabsTrigger>
-                        <TabsTrigger value="virtual">
-                          <Globe className="h-4 w-4 mr-2" />
-                          Virtual
-                        </TabsTrigger>
-                      </TabsList>
-                    </Tabs>
-                  </div>
-                  
-                  <div>
                     <div className="flex justify-between mb-1">
                       <Label htmlFor="category">Category</Label>
                       <span className="text-xs text-gray-400">Required</span>
@@ -347,43 +331,7 @@ const CreateEvent = () => {
                     </div>
                   </div>
                   
-                  {eventType === 'in-person' && (
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <Label htmlFor="location">Venue Location</Label>
-                        <span className="text-xs text-gray-400">Required</span>
-                      </div>
-                      <div className="relative">
-                        <div className="absolute left-3 top-3 text-gray-400">
-                          <MapPin className="h-4 w-4" />
-                        </div>
-                        <Input 
-                          id="location" 
-                          placeholder="Enter venue name and address"
-                          className="bg-card/50 border-gray-800 pl-10"
-                        />
-                      </div>
-                    </div>
-                  )}
-                  
-                  {eventType === 'virtual' && (
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <Label htmlFor="link">Meeting Link</Label>
-                        <span className="text-xs text-gray-400">Required</span>
-                      </div>
-                      <div className="relative">
-                        <div className="absolute left-3 top-3 text-gray-400">
-                          <Link className="h-4 w-4" />
-                        </div>
-                        <Input 
-                          id="link" 
-                          placeholder="Zoom, Google Meet, or other platform link"
-                          className="bg-card/50 border-gray-800 pl-10"
-                        />
-                      </div>
-                    </div>
-                  )}
+                 
                   
                   <div>
                     <div className="flex justify-between mb-1">
@@ -414,6 +362,64 @@ const CreateEvent = () => {
                     </div>
                   </div>
                 </div>
+
+                <div className="mb-8 pt-5">
+                  <h2 className="text-xl font-semibold mb-4">Stall Details</h2>
+                  <p className="text-gray-400">Want to add stalls in your event</p>
+                </div>
+
+                <div>
+                    <div className="flex justify-between mb-1">
+                      <Label htmlFor="capacity">Max Capacity</Label>
+                      <span className="text-xs text-gray-400">Optional</span>
+                    </div>
+                    <div className="relative">
+                      <div className="absolute left-3 top-3 text-gray-400">
+                        <Users className="h-4 w-4" />
+                      </div>
+                      <Input 
+                        id="capacity" 
+                        type="number"
+                        placeholder="Maximum number of stalls"
+                        className="bg-card/50 border-gray-800 pl-10"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between mb-1 pt-5">
+                      <Label htmlFor="capacity">Size</Label>
+                      <span className="text-xs text-gray-400">Optional</span>
+                    </div>
+                    <div className="relative">
+                      <div className="absolute left-3 top-3 text-gray-400">
+                        <Users className="h-4 w-4" />
+                      </div>
+                      <Input 
+                        id="capacity" 
+                        type="number"
+                        placeholder="Stalls size"
+                        className="bg-card/50 border-gray-800 pl-10"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex justify-between mb-1 pt-5">
+                      <Label htmlFor="capacity">Price</Label>
+                      <span className="text-xs text-gray-400">Optional</span>
+                    </div>
+                    <div className="relative">
+                      <div className="absolute left-3 top-3 text-gray-400">
+                        <Users className="h-4 w-4" />
+                      </div>
+                      <Input 
+                        id="capacity" 
+                        type="number"
+                        placeholder="Stalls price"
+                        className="bg-card/50 border-gray-800 pl-10"
+                      />
+                    </div>
+                  </div>
                 
                 <div className="mt-10 flex justify-between">
                   <Button variant="outline" onClick={handlePrevious}>
@@ -491,19 +497,6 @@ const CreateEvent = () => {
                         </div>
                       </div>
                       
-                      <div>
-                        <div className="flex justify-between mb-1">
-                          <Label htmlFor="ticket-description">Description</Label>
-                          <span className="text-xs text-gray-400">Optional</span>
-                        </div>
-                        <Textarea 
-                          id="ticket-description" 
-                          placeholder="Describe what's included with this ticket"
-                          defaultValue="Standard admission with access to all general sessions and exhibition area."
-                          className="bg-card/50 border-gray-800"
-                        />
-                      </div>
-                      
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <div className="flex justify-between mb-1">
@@ -531,7 +524,7 @@ const CreateEvent = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="border border-dashed border-gray-700 rounded-lg p-8 text-center hover:border-gray-500 transition-colors cursor-pointer">
                     <div className="space-y-2">
                       <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">

@@ -52,7 +52,7 @@ const ConfirmPayment = () => {
 
   return (
     <PageTransition>
-      <div className="container mx-auto py-8 px-4 md:px-6">
+      <div className="container mx-auto py-8 px-4 md:px-6 mt-6">
         {/* Back button */}
         <button 
           onClick={() => navigate(-1)} 
