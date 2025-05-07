@@ -7,6 +7,7 @@ const stallRoutes = require("./routes/stall.route");
 const userEngagementRoutes = require("./routes/userEngagement.route");
 const eventRoutes = require("./routes/event.route")
 const ticketRoutes = require("./routes/ticket.route")
+const paymentRoutes = require("./routes/payment.route");
 
 
 const app = express();
@@ -25,6 +26,7 @@ app.use("/api/stall", stallRoutes);
 app.use("/api/userEngagement", userEngagementRoutes);
 app.use("/api/event", eventRoutes);
 app.use("/api/ticket", ticketRoutes);
+app.use("/api/payment", paymentRoutes); 
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);

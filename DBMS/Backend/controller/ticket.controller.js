@@ -27,66 +27,138 @@ const getTicketDetails = async (req, res) => {
   };
   
 
-const purchaseTicket = async (req, res) => {
+  const purchaseTicket = async (req, res) => {
     const attendeeId = req.user.id; 
     const { eventId } = req.params;
+    const { quantity = 1 } = req.body;
+
+    // Start a database transaction
+    const connection = await db.getConnection();
+    await connection.beginTransaction();
 
     try {
+        // Validate request
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(400).json({ message: errors.array() });
+            await connection.rollback();
+            return res.status(400).json({ errors: errors.array() });
         }
 
-        //check if the user is attendee
+        // Validate quantity
+        if (!Number.isInteger(quantity) || quantity < 1 || quantity > 10) {
+            await connection.rollback();
+            return res.status(400).json({ 
+                message: "Quantity must be a positive integer between 1 and 10" 
+            });
+        }
+
+        // Check user role
         if (req.user.role !== 'attendee') { 
-            return res.status(403).json({ message: "Access denied." });
+            await connection.rollback();
+            return res.status(403).json({ 
+                message: "Access denied. Only attendees can purchase tickets." 
+            });
         }
         
-        const [ticketInfo] = await db.query(
-            "SELECT ticket_id, max_quantity FROM tickets WHERE event_id = ?", [eventId]
+        // Get ticket information with FOR UPDATE lock
+        const [ticketInfo] = await connection.query(
+            `SELECT ticket_id, max_quantity, price 
+             FROM tickets 
+             WHERE event_id = ? 
+             FOR UPDATE`, 
+            [eventId]
         );
 
-        if (ticketInfo.length === 0) {
-            return res.status(404).json({ message: "Ticket not found" });
+        if (!ticketInfo || ticketInfo.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ 
+                message: "No tickets available for this event" 
+            });
         }
 
-        const { ticket_id, max_quantity } = ticketInfo[0]; 
+        const { ticket_id, max_quantity, price } = ticketInfo[0]; 
 
-        //check if max capacity has exceeded
-        const [purchasedTickets] = await db.query(
-            "SELECT SUM(quantity) AS total_purchased FROM ticket_purchases WHERE ticket_id = ?", [ticket_id]
+        // Check ticket availability
+        const [purchasedTickets] = await connection.query(
+            `SELECT COALESCE(SUM(quantity), 0) AS total_purchased 
+             FROM ticket_purchases 
+             WHERE ticket_id = ?`, 
+            [ticket_id]
         );
 
-        const totalPurchased = purchasedTickets[0].total_purchased || 0; //defaults to zero
+        const totalPurchased = purchasedTickets[0].total_purchased;
+        const remainingTickets = max_quantity - totalPurchased;
 
-        if (totalPurchased >= max_quantity) {
-            return res.status(400).json({ message: "Tickets sold out" });
+        if (quantity > remainingTickets) {
+            await connection.rollback();
+            return res.status(400).json({ 
+                message: `Not enough tickets available. Only ${remainingTickets} remaining`,
+                remainingTickets
+            });
         }
 
-        //now it'd route to payment gateway but we dont have that so 
-        //hardcoded to simulate gateway response
-        const isValidated = true; 
+        // Simulate payment (in real app, integrate with payment gateway)
+        const paymentAmount = price * quantity;
+        const paymentSuccessful = true;
 
-        if (!isValidated) {
-            return res.status(400).json({ message: "Payment unsuccessful" });
+        if (!paymentSuccessful) {
+            await connection.rollback();
+            return res.status(400).json({ 
+                message: "Payment unsuccessful" 
+            });
         }
 
-        //insert new entry in ticket_purchases
-        const [purchaseResult] = await db.query(`
-            INSERT INTO ticket_purchases (user_id, ticket_id, event_id, quantity, purchase_date, status) 
-            VALUES (?, ?, ?, 1, NOW(), 'completed')`, [attendeeId, ticket_id, eventId]);
+        // Record the purchase
+        const [purchaseResult] = await connection.query(
+            `INSERT INTO ticket_purchases 
+             (user_id, ticket_id, quantity, purchase_date, status) 
+             VALUES (?, ?, ?, NOW(), 'confirmed')`, 
+            [attendeeId, ticket_id, quantity]
+        );
 
+        // Record payment (optional)
+        const [paymentResult] = await connection.query(
+            `INSERT INTO payments 
+             (user_id, amount, payment_method, status) 
+             VALUES (?, ?, 'simulated', 'completed')`,
+            [attendeeId, paymentAmount]
+        );
+
+        // Link payment to purchase
+        await connection.query(
+            `INSERT INTO ticket_payments 
+             (payment_id, ticket_purchase_id) 
+             VALUES (?, ?)`,
+            [paymentResult.insertId, purchaseResult.insertId]
+        );
+
+        // Commit transaction
+        await connection.commit();
+
+        // Return success response
         res.status(201).json({
-            message: "Ticket purchased successfully",
+            message: "Tickets purchased successfully",
             purchaseId: purchaseResult.insertId,
+            paymentId: paymentResult.insertId,
             eventId,
             ticketId: ticket_id,
-            quantity: 1
+            quantity,
+            totalAmount: paymentAmount,
+            remainingTickets: remainingTickets - quantity
         });
 
     } catch (error) {
-        console.error("Error completing purchase:", error);
-        res.status(500).json({ message: "Internal Server Error" });
+        // Rollback transaction on error
+        await connection.rollback();
+        console.error("Error processing ticket purchase:", error);
+        
+        res.status(500).json({ 
+            message: "Failed to process ticket purchase",
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    } finally {
+        // Release connection back to pool
+        if (connection) connection.release();
     }
 };
 

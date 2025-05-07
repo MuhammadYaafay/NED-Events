@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -25,13 +24,16 @@ const ConfirmPayment = () => {
     price: "$299",
     quantity: 1,
     totalPrice: 299,
-    serviceFee: 14.95,
+    stallBooking: null
   };
 
   // Calculate the total price safely
   const calculatedTotalPrice = typeof eventDetails.totalPrice === 'number' ? eventDetails.totalPrice : 299;
-  const calculatedServiceFee = typeof eventDetails.serviceFee === 'number' ? eventDetails.serviceFee : 14.95;
-  const calculatedTotal = calculatedTotalPrice + calculatedServiceFee;
+  const calculatedServiceFee = typeof eventDetails.serviceFee === 'number' ? eventDetails.serviceFee : 0;
+  const stallPrice = eventDetails.stallBooking && eventDetails.stallBooking.status !== 'pending' 
+    ? (typeof eventDetails.stallBooking.price === 'number' ? eventDetails.stallBooking.price : 0) 
+    : 0;
+  const calculatedTotal = calculatedTotalPrice + calculatedServiceFee + stallPrice;
 
   const handlePayment = () => {
     setLoading(true);
@@ -194,6 +196,20 @@ const ConfirmPayment = () => {
                     <span>Ticket Price</span>
                     <span>${calculatedTotalPrice.toFixed(2)}</span>
                   </div>
+                  
+                  {eventDetails.stallBooking && eventDetails.stallBooking.status !== 'pending' && (
+                    <div className="flex justify-between">
+                      <span>Stall Booking</span>
+                      <span>${stallPrice.toFixed(2)}</span>
+                    </div>
+                  )}
+
+                  {calculatedServiceFee > 0 && (
+                    <div className="flex justify-between">
+                      <span>Service Fee</span>
+                      <span>${calculatedServiceFee.toFixed(2)}</span>
+                    </div>
+                  )}
                   
                   <Separator className="my-2" />
                   <div className="flex justify-between font-semibold">
