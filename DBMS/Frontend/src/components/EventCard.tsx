@@ -5,35 +5,40 @@ import { Calendar, MapPin, Users, Clock } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 
 interface EventCardProps {
-  id: string;
+  event_id: string;
   title: string;
-  date: string;
-  time: string;
-  location: string;
   category: string;
-  attendees: number;
+  start_date: string;
+  event_time: string;
+  location: string;
+  booking_count: number;
   image: string;
-  price?: string;
+  ticket_price?: string;
   featured?: boolean;
 }
 
 const EventCard = ({ 
-  id, 
+  event_id, 
   title, 
-  date, 
-  time, 
+  start_date, 
+  category,
+  event_time, 
   location, 
-  category, 
-  attendees, 
+  booking_count, 
   image, 
-  price, 
-  featured = false 
+  ticket_price, 
+  featured
 }: EventCardProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
 
+  const formattedDate = new Date(start_date).toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
   return (
     <Link 
-      to={`/event/${id}`} 
+      to={`/event/${event_id}`} 
       className={`block rounded-xl overflow-hidden hover-scale ${
         featured ? 'border-2 border-primary shadow-lg shadow-primary/10' : 'border border-gray-800'
       }`}
@@ -46,9 +51,9 @@ const EventCard = ({
           className={`w-full h-full object-cover transition-all duration-500 ${isLoaded ? 'scale-100 blur-0' : 'scale-105 blur-sm'}`}
           onLoad={() => setIsLoaded(true)}
         />
-        {price && (
+        {ticket_price && (
           <div className="absolute top-3 right-3 z-20">
-            <Badge className="bg-primary hover:bg-primary">{price}</Badge>
+            <Badge className="bg-primary hover:bg-primary">{ticket_price}</Badge>
           </div>
         )}
         {featured && (
@@ -61,23 +66,23 @@ const EventCard = ({
       </div>
       
       <div className="p-5 bg-card">
-        <div className="flex items-center mb-3">
-          <Badge variant="outline" className="text-xs font-normal">
-            {category}
-          </Badge>
-        </div>
         
         <h3 className="font-semibold text-lg mb-2 line-clamp-2">{title}</h3>
         
+        <div className="flex items-center mb-2">
+          <Badge variant="outline" className="bg-black/50 backdrop-blur-sm border-primary text-primary">
+            {category}
+          </Badge>
+          </div>
         <div className="space-y-2 text-sm mt-4">
           <div className="flex items-center text-muted-foreground">
             <Calendar className="h-4 w-4 mr-2 text-primary" />
-            <span>{date}</span>
+            <span>{formattedDate}</span>
           </div>
           
           <div className="flex items-center text-muted-foreground">
             <Clock className="h-4 w-4 mr-2 text-primary" />
-            <span>{time}</span>
+            <span>{event_time}</span>
           </div>
           
           <div className="flex items-center text-muted-foreground">
@@ -87,7 +92,7 @@ const EventCard = ({
           
           <div className="flex items-center text-muted-foreground">
             <Users className="h-4 w-4 mr-2 text-primary" />
-            <span>{attendees} attending</span>
+            <span>{booking_count} attending</span>
           </div>
         </div>
       </div>

@@ -13,82 +13,84 @@ const createEvent = async (req, res) => {
       description,
       start_date,
       end_date,
+      category,
       location,
       image,
-      ticket_price, //will be zero for unpaid
+      ticket_price,
       ticket_max_quantity,
-      has_stall, //frontend validation will ensure no other stall-related stuff makes here unless this is true
+      has_stall,
       stall_price,
-      // stall_size, this is in stall booking table
-      stall_max_quantity,
-      capacity,
+      stall_max_quantity
     } = req.body;
 
     const organizerId = req.user.id;
 
-    if (
-      !title ||
-      !start_date ||
-      !end_date ||
-      !location ||
-      ticket_price === undefined ||
-      ticket_max_quantity === undefined ||
-      has_stall === undefined
-    ) {
+    // Validate required fields
+    if (!title || !start_date || !end_date || !location || 
+        ticket_price === undefined || ticket_max_quantity === undefined) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    const [eventResult] = await db.query(
-      `INSERT INTO events (title, description, start_date, end_date, location, organizer_id, image, capacity)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        title,
-        description,
-        start_date,
-        end_date,
-        location,
-        organizerId,
-        image || null,
-        capacity,
-      ]
-    );
+    // Start transaction
+    const connection = await db.getConnection();
+    await connection.beginTransaction();
 
-    //event has been made in event table but ticket needs to be made too
-    const eventId = eventResult.insertId;
-
-    const [ticketResult] = await db.query(
-      `INSERT INTO tickets (event_id, price, max_quantity)
-       VALUES (?, ?, ?)`,
-      [eventId, parseInt(ticket_price), parseInt(ticket_max_quantity)]
-    );
-    const ticketId = ticketResult.insertId;
-
-    //if stalls and vendors are to be created:
-    let stallId = null;
-    if (has_stall) {
-      if (!stall_price || !stall_max_quantity) {
-        return res.status(400).json({ message: "Stall details missing" });
-      }
-      const [stallResult] = await db.query(
-        `INSERT INTO stalls (event_id, price, max_quantity) VALUES (?, ?, ?)`,
-        [eventId, parseInt(stall_price), stall_max_quantity]
+    try {
+      // Create event (without capacity)
+      const [eventResult] = await connection.query(
+        `INSERT INTO events (title, description, start_date, end_date, location, organizer_id, image, category)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [title, description, start_date, end_date, location, organizerId, image || null, category]
       );
-      stallId = stallResult.insertId;
+
+      const eventId = eventResult.insertId;
+
+      // Create ticket
+      const [ticketResult] = await connection.query(
+        `INSERT INTO tickets (event_id, price, max_quantity)
+         VALUES (?, ?, ?)`,
+        [eventId, parseFloat(ticket_price), parseInt(ticket_max_quantity)]
+      );
+
+      // Create stall if needed
+      let stallId = null;
+      if (has_stall) {
+        if (!stall_price || !stall_max_quantity) {
+          throw new Error("Stall details missing");
+        }
+        
+        const [stallResult] = await connection.query(
+          `INSERT INTO stalls (event_id, price, max_quantity) 
+           VALUES (?, ?, ?)`,
+          [eventId, parseFloat(stall_price), parseInt(stall_max_quantity)]
+        );
+        stallId = stallResult.insertId;
+      }
+
+      await connection.commit();
+
+      res.status(201).json({
+        message: "Event created successfully",
+        eventId,
+        ticketId: ticketResult.insertId,
+        stallId
+      });
+
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
     }
 
-    // success msg
-
-    res.status(201).json({
-      message: "Event created successfully",
-      eventId,
-      ticketId,
-      stallId,
-    });
   } catch (error) {
     console.error("Error creating event:", error);
-    res.status(500).json({ message: "Internal Server Error" });
+    res.status(500).json({ 
+      message: error.message || "Internal Server Error" 
+    });
   }
 };
+
 
 //get list of all events for browsing
 const getAllEvents = async (req, res) => {
@@ -101,11 +103,11 @@ const getAllEvents = async (req, res) => {
         e.description,
         e.start_date,
         e.end_date,
-        e.start_time,
-        e.end_time,
+        e.event_time,
         e.location,
+        e.category,
         e.organizer_id,
-        e.capacity,
+        t.max_quantity,
         e.status,
         e.image,
         e.created_at,
@@ -137,18 +139,21 @@ const getTrendingEvents = async (req, res) => {
         e.event_id,
         e.title,
         e.description,
+        e.event_time,
         e.start_date,
         e.end_date,
         e.location,
+        e.category,
         e.organizer_id,
-        e.capacity,
+        t.max_quantity,
         e.status,
         e.image,
         t.price AS ticket_price,
-        COUNT(tp.user_id) AS booking_count
+        COALESCE(COUNT(tp.purchase_id), 0) AS booking_count,
+        t.max_quantity - COALESCE(SUM(tp.quantity), 0) AS tickets_remaining
       FROM events e
       JOIN tickets t ON t.event_id = e.event_id
-      JOIN ticket_purchases tp ON tp.ticket_id = t.ticket_id
+      LEFT JOIN ticket_purchases tp ON tp.ticket_id = t.ticket_id
       WHERE e.status = 'upcoming'
       GROUP BY 
         e.event_id,
@@ -158,17 +163,35 @@ const getTrendingEvents = async (req, res) => {
         e.end_date,
         e.location,
         e.organizer_id,
-        e.capacity,
+        t.max_quantity,
         e.status,
         e.image,
         t.price
+      HAVING booking_count > 0
       ORDER BY booking_count DESC
       LIMIT 5
       `
     );
 
     if (!trendingEvents.length) {
-      return res.status(404).json({ message: "No trending events found" });
+      // Try a fallback query if no events with purchases exist
+      const [fallbackEvents] = await db.query(
+        `
+        SELECT 
+          e.*,
+          t.price AS ticket_price,
+          t.max_quantity,
+          0 AS booking_count,
+          t.max_quantity AS tickets_remaining
+        FROM events e
+        JOIN tickets t ON t.event_id = e.event_id
+        WHERE e.status = 'upcoming'
+        ORDER BY e.created_at DESC
+        LIMIT 5
+        `
+      );
+      
+      return res.json(fallbackEvents.length ? fallbackEvents : []);
     }
 
     res.json(trendingEvents);
@@ -193,9 +216,11 @@ const getEventById = async (req, res) => {
         e.description,
         e.start_date,
         e.end_date,
+        e.start_time,
+        e.end_time,
         e.location,
         e.organizer_id,
-        e.capacity,
+        t.max_quantity,
         e.status,
         e.image,
         e.created_at,

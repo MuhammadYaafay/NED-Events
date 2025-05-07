@@ -3,180 +3,178 @@ const db = require("../config/dbConnection");
 
 //to show user ticket price for event when "buy ticket" is clicked
 const getTicketDetails = async (req, res) => {
-    try {
-      const eventId = parseInt(req.params.eventid);
-  
-      if (!eventId) {
-        return res.status(400).json({ message: "Missing event ID" });
-      }
-  
-      const [ticketRows] = await db.query(
-        "SELECT price FROM tickets WHERE event_id = ?",
-        [eventId]
-      );
-  
-      if (ticketRows.length === 0) {
-        return res.status(404).json({ message: "Ticket not found" });
-      }
-  
-      res.status(200).json({ price: ticketRows[0].price });
-    } catch (error) {
-      console.error("Error fetching ticket details:", error);
-      res.status(500).json({ message: "Internal Server Error" });
+  try {
+    const eventId = parseInt(req.params.eventid);
+
+    if (!eventId) {
+      return res.status(400).json({ message: "Missing event ID" });
     }
-  };
-  
 
-  const purchaseTicket = async (req, res) => {
-    const attendeeId = req.user.id; 
-    const { eventId } = req.params;
-    const { quantity = 1 } = req.body;
+    const [ticketRows] = await db.query(
+      "SELECT price FROM tickets WHERE event_id = ?",
+      [eventId]
+    );
 
-    // Start a database transaction
-    const connection = await db.getConnection();
-    await connection.beginTransaction();
-
-    try {
-        // Validate request
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            await connection.rollback();
-            return res.status(400).json({ errors: errors.array() });
-        }
-
-        // Validate quantity
-        if (!Number.isInteger(quantity) || quantity < 1 || quantity > 10) {
-            await connection.rollback();
-            return res.status(400).json({ 
-                message: "Quantity must be a positive integer between 1 and 10" 
-            });
-        }
-
-        // Check user role
-        if (req.user.role !== 'attendee') { 
-            await connection.rollback();
-            return res.status(403).json({ 
-                message: "Access denied. Only attendees can purchase tickets." 
-            });
-        }
-        
-        // Get ticket information with FOR UPDATE lock
-        const [ticketInfo] = await connection.query(
-            `SELECT ticket_id, max_quantity, price 
-             FROM tickets 
-             WHERE event_id = ? 
-             FOR UPDATE`, 
-            [eventId]
-        );
-
-        if (!ticketInfo || ticketInfo.length === 0) {
-            await connection.rollback();
-            return res.status(404).json({ 
-                message: "No tickets available for this event" 
-            });
-        }
-
-        const { ticket_id, max_quantity, price } = ticketInfo[0]; 
-
-        // Check ticket availability
-        const [purchasedTickets] = await connection.query(
-            `SELECT COALESCE(SUM(quantity), 0) AS total_purchased 
-             FROM ticket_purchases 
-             WHERE ticket_id = ?`, 
-            [ticket_id]
-        );
-
-        const totalPurchased = purchasedTickets[0].total_purchased;
-        const remainingTickets = max_quantity - totalPurchased;
-
-        if (quantity > remainingTickets) {
-            await connection.rollback();
-            return res.status(400).json({ 
-                message: `Not enough tickets available. Only ${remainingTickets} remaining`,
-                remainingTickets
-            });
-        }
-
-        // Simulate payment (in real app, integrate with payment gateway)
-        const paymentAmount = price * quantity;
-        const paymentSuccessful = true;
-
-        if (!paymentSuccessful) {
-            await connection.rollback();
-            return res.status(400).json({ 
-                message: "Payment unsuccessful" 
-            });
-        }
-
-        // Record the purchase
-        const [purchaseResult] = await connection.query(
-            `INSERT INTO ticket_purchases 
-             (user_id, ticket_id, quantity, purchase_date, status) 
-             VALUES (?, ?, ?, NOW(), 'confirmed')`, 
-            [attendeeId, ticket_id, quantity]
-        );
-
-        // Record payment (optional)
-        const [paymentResult] = await connection.query(
-            `INSERT INTO payments 
-             (user_id, amount, payment_method, status) 
-             VALUES (?, ?, 'simulated', 'completed')`,
-            [attendeeId, paymentAmount]
-        );
-
-        // Link payment to purchase
-        await connection.query(
-            `INSERT INTO ticket_payments 
-             (payment_id, ticket_purchase_id) 
-             VALUES (?, ?)`,
-            [paymentResult.insertId, purchaseResult.insertId]
-        );
-
-        // Commit transaction
-        await connection.commit();
-
-        // Return success response
-        res.status(201).json({
-            message: "Tickets purchased successfully",
-            purchaseId: purchaseResult.insertId,
-            paymentId: paymentResult.insertId,
-            eventId,
-            ticketId: ticket_id,
-            quantity,
-            totalAmount: paymentAmount,
-            remainingTickets: remainingTickets - quantity
-        });
-
-    } catch (error) {
-        // Rollback transaction on error
-        await connection.rollback();
-        console.error("Error processing ticket purchase:", error);
-        
-        res.status(500).json({ 
-            message: "Failed to process ticket purchase",
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined
-        });
-    } finally {
-        // Release connection back to pool
-        if (connection) connection.release();
+    if (ticketRows.length === 0) {
+      return res.status(404).json({ message: "Ticket not found" });
     }
+
+    res.status(200).json({ price: ticketRows[0].price });
+  } catch (error) {
+    console.error("Error fetching ticket details:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
 };
 
+const purchaseTicket = async (req, res) => {
+  const attendeeId = req.user.id;
+  const { eventId } = req.params;
+  const { quantity = 1 } = req.body;
+
+  // Start a database transaction
+  const connection = await db.getConnection();
+  await connection.beginTransaction();
+
+  try {
+    // Validate request
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      await connection.rollback();
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    // Validate quantity
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 10) {
+      await connection.rollback();
+      return res.status(400).json({
+        message: "Quantity must be a positive integer between 1 and 10",
+      });
+    }
+
+    // Check user role
+    if (req.user.role !== "attendee") {
+      await connection.rollback();
+      return res.status(403).json({
+        message: "Access denied. Only attendees can purchase tickets.",
+      });
+    }
+
+    // Get ticket information with FOR UPDATE lock
+    const [ticketInfo] = await connection.query(
+      `SELECT ticket_id, max_quantity, price 
+             FROM tickets 
+             WHERE event_id = ? 
+             FOR UPDATE`,
+      [eventId]
+    );
+
+    if (!ticketInfo || ticketInfo.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({
+        message: "No tickets available for this event",
+      });
+    }
+
+    const { ticket_id, max_quantity, price } = ticketInfo[0];
+
+    // Check ticket availability
+    const [purchasedTickets] = await connection.query(
+      `SELECT COALESCE(SUM(quantity), 0) AS total_purchased 
+             FROM ticket_purchases 
+             WHERE ticket_id = ?`,
+      [ticket_id]
+    );
+
+    const totalPurchased = purchasedTickets[0].total_purchased;
+    const remainingTickets = max_quantity - totalPurchased;
+
+    if (quantity > remainingTickets) {
+      await connection.rollback();
+      return res.status(400).json({
+        message: `Not enough tickets available. Only ${remainingTickets} remaining`,
+        remainingTickets,
+      });
+    }
+
+    // Simulate payment (in real app, integrate with payment gateway)
+    const paymentAmount = price * quantity;
+    const paymentSuccessful = true;
+
+    if (!paymentSuccessful) {
+      await connection.rollback();
+      return res.status(400).json({
+        message: "Payment unsuccessful",
+      });
+    }
+
+    // Record the purchase
+    const [purchaseResult] = await connection.query(
+      `INSERT INTO ticket_purchases 
+             (user_id, ticket_id, quantity, purchase_date, status) 
+             VALUES (?, ?, ?, NOW(), 'confirmed')`,
+      [attendeeId, ticket_id, quantity]
+    );
+
+    // Record payment (optional)
+    const [paymentResult] = await connection.query(
+      `INSERT INTO payments 
+             (user_id, amount, payment_method, status) 
+             VALUES (?, ?, 'simulated', 'completed')`,
+      [attendeeId, paymentAmount]
+    );
+
+    // Link payment to purchase
+    await connection.query(
+      `INSERT INTO ticket_payments 
+             (payment_id, ticket_purchase_id) 
+             VALUES (?, ?)`,
+      [paymentResult.insertId, purchaseResult.insertId]
+    );
+
+    // Commit transaction
+    await connection.commit();
+
+    // Return success response
+    res.status(201).json({
+      message: "Tickets purchased successfully",
+      purchaseId: purchaseResult.insertId,
+      paymentId: paymentResult.insertId,
+      eventId,
+      ticketId: ticket_id,
+      quantity,
+      totalAmount: paymentAmount,
+      remainingTickets: remainingTickets - quantity,
+    });
+  } catch (error) {
+    // Rollback transaction on error
+    await connection.rollback();
+    console.error("Error processing ticket purchase:", error);
+
+    res.status(500).json({
+      message: "Failed to process ticket purchase",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  } finally {
+    // Release connection back to pool
+    if (connection) connection.release();
+  }
+};
 
 //for myTickets; will show attendee any ticket theyve bought ever
 const getTicketsForUser = async (req, res) => {
-    try {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ message: errors.array() });
-        }
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: errors.array() });
+    }
 
-        const attendeeId = req.params.id;
+    const attendeeId = req.params.id;
 
-        if (req.user.id !== attendeeId || req.user.role !== 'attendee') {
-            return res.status(403).json({ message: "Access denied." });
-        }
-        const [tickets] = await db.query(`
+    if (req.user.id !== attendeeId || req.user.role !== "attendee") {
+      return res.status(403).json({ message: "Access denied." });
+    }
+    const [tickets] = await db.query(
+      `
             SELECT 
               ticket_purchases.purchase_id,
               ticket_purchases.quantity,
@@ -188,40 +186,40 @@ const getTicketsForUser = async (req, res) => {
             JOIN events ON tickets.event_id = events.event_id
             WHERE ticket_purchases.user_id = ?
             ORDER BY ticket_purchases.purchase_date DESC
-          `, [attendeeId]);
+          `,
+      [attendeeId]
+    );
 
-        res.status(200).json({ tickets });
-
-    } catch (error) {
-        console.error("Error fetching tickets:", error);
-        res.status(500).json({ message: "Internal Server Error" });
-    }
+    res.status(200).json({ tickets });
+  } catch (error) {
+    console.error("Error fetching tickets:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
 };
 
-
 const getTicketsForEvent = async (req, res) => {
-    // *ORGANIZER ONLY*
-    // To view who attended (bought tickets for) their event
-    try {
-        const errors = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ message: errors.array() });
-        }
+  // *ORGANIZER ONLY*
+  // To view who attended (bought tickets for) their event
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: errors.array() });
+    }
 
-        const organizerId = req.user.id;
+    const organizerId = req.user.id;
 
-        const eventId = req.params.id;
+    const eventId = req.params.id;
 
-        const [event] = await db.query(
-            "SELECT event_id FROM events WHERE event_id = ? AND organizer_id = ?",
-            [eventId, organizerId]
-        );
+    const [event] = await db.query(
+      "SELECT event_id FROM events WHERE event_id = ? AND organizer_id = ?",
+      [eventId, organizerId]
+    );
 
-        if (event.length === 0) {
-            return res.status(403).json({ message: "Access denied" });
-        }
-        const [tickets] = await db.query(
-            `SELECT 
+    if (event.length === 0) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+    const [tickets] = await db.query(
+      `SELECT 
             ticket_purchases.purchase_id,
             ticket_purchases.quantity,
             ticket_purchases.purchase_date,
@@ -232,23 +230,20 @@ const getTicketsForEvent = async (req, res) => {
             JOIN tickets ON ticket_purchases.ticket_id = tickets.ticket_id
             JOIN users ON ticket_purchases.user_id = users.user_id
             WHERE tickets.event_id = ?
-            ORDER BY ticket_purchases.purchase_date DESC`, [eventId]);
+            ORDER BY ticket_purchases.purchase_date DESC`,
+      [eventId]
+    );
 
-        res.json({ tickets });
-
-    } catch (error) {
-        console.error("Error fetching tickets:", error);
-        res.status(500).json({ message: "Internal Server Error" });
-    }
+    res.json({ tickets });
+  } catch (error) {
+    console.error("Error fetching tickets:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
 };
 
-
-
-
-
 module.exports = {
-    getTicketDetails,
-    purchaseTicket,
-    getTicketsForUser,
-    getTicketsForEvent
+  getTicketDetails,
+  purchaseTicket,
+  getTicketsForUser,
+  getTicketsForEvent,
 };

@@ -1,106 +1,69 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowRight, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { ArrowRight, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import EventCard from "@/components/EventCard";
 import PageTransition from "@/components/PageTransition";
+import { apiRequest } from "@/utils/apiUtils";
 
-const featuredEvents = [
-  {
-    id: '1',
-    title: 'Tech Conference 2023: Future of AI',
-    date: 'June 15, 2023',
-    time: '9:00 AM - 6:00 PM',
-    location: 'San Francisco, CA',
-    category: 'Technology',
-    attendees: 1200,
-    image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
-    price: '$299',
-    featured: true
-  },
-  {
-    id: '2',
-    title: 'Summer Music Festival',
-    date: 'July 22-24, 2023',
-    time: 'All Day',
-    location: 'Austin, TX',
-    category: 'Music',
-    attendees: 5000,
-    image: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
-    price: '$150',
-    featured: true
-  },
-  {
-    id: '3',
-    title: 'Food & Wine Expo',
-    date: 'August 10, 2023',
-    time: '12:00 PM - 10:00 PM',
-    location: 'New York, NY',
-    category: 'Food & Drink',
-    attendees: 3500,
-    image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
-    price: '$75',
-    featured: true
-  }
-];
+interface featuredEvents {
+  event_id: string;
+  title: string;
+  start_date: string;
+  event_time: string;
+  category: string;
+  location: string;
+  booking_count: number;
+  image: string;
+  ticket_price: string;
+  featured?: boolean;
+}
 
-const upcomingEvents = [
-  {
-    id: '4',
-    title: 'Photography Workshop',
-    date: 'June 8, 2023',
-    time: '1:00 PM - 5:00 PM',
-    location: 'Chicago, IL',
-    category: 'Workshop',
-    attendees: 45,
-    image: 'https://images.unsplash.com/photo-1452587925148-ce544e77e70d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
-    price: '$120'
-  },
-  {
-    id: '5',
-    title: 'Business Networking Mixer',
-    date: 'June 12, 2023',
-    time: '6:30 PM - 9:00 PM',
-    location: 'Boston, MA',
-    category: 'Networking',
-    attendees: 150,
-    image: 'https://images.unsplash.com/photo-1556761175-b413da4baf72?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
-    price: '$30'
-  },
-  {
-    id: '6',
-    title: 'Yoga in the Park',
-    date: 'June 17, 2023',
-    time: '8:00 AM - 9:30 AM',
-    location: 'Los Angeles, CA',
-    category: 'Health',
-    attendees: 75,
-    image: 'https://images.unsplash.com/photo-1545389336-cf090694435e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
-    price: 'Free'
-  },
-  {
-    id: '7',
-    title: 'Artificial Intelligence Summit',
-    date: 'June 20, 2023',
-    time: '9:00 AM - 4:00 PM',
-    location: 'Seattle, WA',
-    category: 'Technology',
-    attendees: 850,
-    image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
-    price: '$199'
-  }
-];
+interface upcomingEvents {
+  event_id: string;
+  title: string;
+  start_date: string;
+  event_time: string;
+  category: string;
+  location: string;
+  booking_count: number;
+  image: string;
+  ticket_price: string;
+}
 
 const Home = () => {
+  const [upcomingEvents, setUpcomingEvents] = useState<upcomingEvents[]>([]);
+  const [featuredEvents, setFeaturedEvents] = useState<featuredEvents[]>([]);
+  const [loading, setLoading] = useState(true);
   const [heroLoaded, setHeroLoaded] = useState(false);
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const upcoming = (await apiRequest("/api/event/")) as upcomingEvents[];
+        setUpcomingEvents(upcoming);
+        const featured = (await apiRequest(
+          "/api/event/trending"
+        )) as featuredEvents[];
+        setFeaturedEvents(featured);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching events:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvents();
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setHeroLoaded(true);
     }, 300);
-    
+
     return () => clearTimeout(timer);
   }, []);
 
@@ -110,31 +73,48 @@ const Home = () => {
         <section className="relative h-screen flex items-center justify-center overflow-hidden">
           <div className="absolute inset-0 z-0">
             <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-background z-10"></div>
-            <img 
-              src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80" 
-              alt="Event" 
-              className={`w-full h-full object-cover transition-all duration-1000 ${heroLoaded ? 'scale-100 blur-0' : 'scale-110 blur-md'}`}
+            <img
+              src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80"
+              alt="Event"
+              className={`w-full h-full object-cover transition-all duration-1000 ${
+                heroLoaded ? "scale-100 blur-0" : "scale-110 blur-md"
+              }`}
             />
           </div>
-          
+
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-20">
             <div className="max-w-3xl mx-auto text-center">
-              <div className={`transform transition-all duration-700 ${heroLoaded ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
+              <div
+                className={`transform transition-all duration-700 ${
+                  heroLoaded
+                    ? "translate-y-0 opacity-100"
+                    : "translate-y-10 opacity-0"
+                }`}
+              >
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6">
-                  <span className="text-gradient">Unforgettable</span> Events Start Here
+                  <span className="text-gradient">Unforgettable</span> Events
+                  Start Here
                 </h1>
                 <p className="text-xl md:text-2xl text-gray-300 mb-8">
-                  Discover, create, and experience extraordinary moments with our premium event platform.
+                  Discover, create, and experience extraordinary moments with
+                  our premium event platform.
                 </p>
                 <div className="flex flex-col sm:flex-row justify-center gap-4">
                   <Link to="/events">
-                    <Button size="lg" className="btn-hover-effect min-w-[180px]">
+                    <Button
+                      size="lg"
+                      className="btn-hover-effect min-w-[180px]"
+                    >
                       Find Events
                       <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
                   </Link>
                   <Link to="/create-event">
-                    <Button size="lg" variant="outline" className="min-w-[180px]">
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      className="min-w-[180px]"
+                    >
                       Host an Event
                     </Button>
                   </Link>
@@ -142,64 +122,75 @@ const Home = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="absolute bottom-10 left-0 right-0 flex justify-center animate-bounce z-20">
             <div className="w-8 h-8 border-2 border-white/40 rounded-full flex items-center justify-center">
               <ArrowRight className="h-4 w-4 text-white/60 transform rotate-90" />
             </div>
           </div>
         </section>
-        
+
         <section className="py-20 bg-gradient-to-b from-background to-black/90">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12">
               <div>
                 <div className="inline-block mb-2">
-                  <Badge variant="outline" className="px-3 py-1 text-xs font-semibold text-primary border-primary uppercase">
+                  <Badge
+                    variant="outline"
+                    className="px-3 py-1 text-xs font-semibold text-primary border-primary uppercase"
+                  >
                     Featured
                   </Badge>
                 </div>
                 <h2 className="text-3xl font-bold mb-2">Trending Events</h2>
                 <p className="text-gray-400 max-w-2xl">
-                  Discover the most anticipated events that are capturing everyone's attention.
+                  Discover the most anticipated events that are capturing
+                  everyone's attention.
                 </p>
               </div>
-              <Link to="/events" className="mt-4 md:mt-0 group flex items-center text-primary">
+              <Link
+                to="/events"
+                className="mt-4 md:mt-0 group flex items-center text-primary"
+              >
                 <span className="mr-1">View all events</span>
                 <ArrowRight className="h-4 w-4 transform group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {featuredEvents.map((event) => (
-                <EventCard key={event.id} {...event} />
+                <EventCard key={event.event_id} {...event} />
               ))}
             </div>
           </div>
         </section>
-        
+
         <section className="py-20 bg-gradient-to-b from-black/90 to-background">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12">
               <div>
                 <div className="inline-block mb-2">
-                  <Badge variant="outline" className="px-3 py-1 text-xs font-semibold text-primary border-primary uppercase">
+                  <Badge
+                    variant="outline"
+                    className="px-3 py-1 text-xs font-semibold text-primary border-primary uppercase"
+                  >
                     Calendar
                   </Badge>
                 </div>
                 <h2 className="text-3xl font-bold mb-2">Upcoming Events</h2>
                 <p className="text-gray-400 max-w-2xl">
-                  The latest events happening in your area and beyond. Don't miss out!
+                  The latest events happening in your area and beyond. Don't
+                  miss out!
                 </p>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {upcomingEvents.map((event) => (
-                <EventCard key={event.id} {...event} />
+                <EventCard key={event.event_id} {...event} />
               ))}
             </div>
-            
+
             <div className="mt-12 text-center">
               <Link to="/events">
                 <Button className="btn-hover-effect">
@@ -210,14 +201,16 @@ const Home = () => {
             </div>
           </div>
         </section>
-        
+
         <section className="py-20 bg-gradient-to-br from-black to-primary/20">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="max-w-4xl mx-auto text-center">
-              <h2 className="text-4xl font-bold mb-6">Ready to Host Your Own Event?</h2>
+              <h2 className="text-4xl font-bold mb-6">
+                Ready to Host Your Own Event?
+              </h2>
               <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-                Turn your vision into reality with our powerful event management platform.
-                Get started in minutes.
+                Turn your vision into reality with our powerful event management
+                platform. Get started in minutes.
               </p>
               <div className="flex flex-col sm:flex-row justify-center gap-4">
                 <Link to="/create-event">

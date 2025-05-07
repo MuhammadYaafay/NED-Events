@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,98 +8,19 @@ import { Calendar as CalendarIcon, Search, X, Filter, ChevronDown, SlidersHorizo
 import { Badge } from "@/components/ui/badge";
 import EventCard from '@/components/EventCard';
 import PageTransition from '@/components/PageTransition';
+import { apiRequest } from '@/utils/apiUtils';
 
-const eventsData = [
-  {
-    id: '1',
-    title: 'Tech Conference 2023: Future of AI',
-    date: 'June 15, 2023',
-    time: '9:00 AM - 6:00 PM',
-    location: 'San Francisco, CA',
-    category: 'Technology',
-    attendees: 1200,
-    image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
-    price: '$299',
-    featured: true
-  },
-  {
-    id: '2',
-    title: 'Summer Music Festival',
-    date: 'July 22-24, 2023',
-    time: 'All Day',
-    location: 'Austin, TX',
-    category: 'Music',
-    attendees: 5000,
-    image: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
-    price: '$150',
-  },
-  {
-    id: '3',
-    title: 'Food & Wine Expo',
-    date: 'August 10, 2023',
-    time: '12:00 PM - 10:00 PM',
-    location: 'New York, NY',
-    category: 'Food & Drink',
-    attendees: 3500,
-    image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
-    price: '$75',
-  },
-  {
-    id: '4',
-    title: 'Photography Workshop',
-    date: 'June 8, 2023',
-    time: '1:00 PM - 5:00 PM',
-    location: 'Chicago, IL',
-    category: 'Workshop',
-    attendees: 45,
-    image: 'https://images.unsplash.com/photo-1452587925148-ce544e77e70d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
-    price: '$120',
-  },
-  {
-    id: '5',
-    title: 'Business Networking Mixer',
-    date: 'June 12, 2023',
-    time: '6:30 PM - 9:00 PM',
-    location: 'Boston, MA',
-    category: 'Networking',
-    attendees: 150,
-    image: 'https://images.unsplash.com/photo-1556761175-b413da4baf72?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
-    price: '$30',
-  },
-  {
-    id: '6',
-    title: 'Yoga in the Park',
-    date: 'June 17, 2023',
-    time: '8:00 AM - 9:30 AM',
-    location: 'Los Angeles, CA',
-    category: 'Health',
-    attendees: 75,
-    image: 'https://images.unsplash.com/photo-1545389336-cf090694435e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
-    price: 'Free',
-  },
-  {
-    id: '7',
-    title: 'Artificial Intelligence Summit',
-    date: 'June 20, 2023',
-    time: '9:00 AM - 4:00 PM',
-    location: 'Seattle, WA',
-    category: 'Technology',
-    attendees: 850,
-    image: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
-    price: '$199',
-  },
-  {
-    id: '8',
-    title: 'Art Gallery Opening Night',
-    date: 'June 25, 2023',
-    time: '7:00 PM - 10:00 PM',
-    location: 'Miami, FL',
-    category: 'Arts',
-    attendees: 220,
-    image: 'https://images.unsplash.com/photo-1531058020387-3be344556be6?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
-    price: '$25',
-  },
-];
+interface eventsData {
+  event_id: string;
+  title: string;
+  category: string;
+  start_date: string;
+  event_time: string;
+  location: string;
+  booking_count: number;
+  image: string;
+  ticket_price: string;
+}
 
 const categoryOptions = [
   { value: 'all', label: 'All Categories' },
@@ -113,24 +34,43 @@ const categoryOptions = [
 ];
 
 const Events = () => {
+  const [upcomingEvents, setUpcomingEvents] = useState<eventsData[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [priceRange, setPriceRange] = useState([0, 500]);
   const navigate = useNavigate();
 
+    useEffect(() => {
+      const fetchEvents = async () => {
+        try {
+          const upcoming = (await apiRequest("/api/event/")) as eventsData[];
+          setUpcomingEvents(upcoming);
+          setLoading(false);
+        } catch (error) {
+          console.error("Error fetching events:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+  
+      fetchEvents();
+    }, []);
+  
+
   const toggleFilters = () => {
     setShowFilters(!showFilters);
   };
 
-  const filteredEvents = eventsData.filter(event => {
+  const filteredEvents = upcomingEvents.filter(event => {
     const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           event.location.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesCategory = selectedCategory === 'all' || 
                            event.category.toLowerCase() === selectedCategory.toLowerCase();
     
-    const eventPrice = event.price === 'Free' ? 0 : parseInt(event.price.replace('$', ''));
+    const eventPrice = event.ticket_price === 'Free' ? 0 : parseInt(event.ticket_price.replace('$', ''));
     const matchesPrice = eventPrice >= priceRange[0] && eventPrice <= priceRange[1];
     
     return matchesSearch && matchesCategory && matchesPrice;
@@ -143,7 +83,7 @@ const Events = () => {
           <div className="flex flex-col space-y-4 md:space-y-0 md:flex-row md:justify-between md:items-center mb-8">
             <div>
               <h1 className="text-3xl font-bold mb-2">Discover Events</h1>
-              <p className="text-gray-400">Find your next experience from {eventsData.length} upcoming events</p>
+              <p className="text-gray-400">Find your next experience from {upcomingEvents.length} upcoming events</p>
             </div>
             
             <div className="flex space-x-3">
@@ -254,7 +194,7 @@ const Events = () => {
           {filteredEvents.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredEvents.map(event => (
-                <EventCard key={event.id} {...event} />
+                <EventCard key={event.event_id} {...event} />
               ))}
             </div>
           ) : (

@@ -49,11 +49,13 @@ CREATE TABLE events (
     start_date DATETIME,
     end_date DATETIME,
     location VARCHAR(255),
+    category VARCHAR(255), 
     organizer_id INT NOT NULL,
     status ENUM('upcoming', 'ongoing', 'completed', 'cancelled') DEFAULT 'upcoming',
     image VARCHAR(255),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (organizer_id) REFERENCES users(user_id)
+
 );
 
 CREATE TABLE
@@ -61,14 +63,10 @@ CREATE TABLE
         category_id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
         description TEXT
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY (name) --this will make sure that we dont have duplicate entries for same category
     );
-
--- CATEGORY TYPES (like 'music', 'tech', etc.)
-CREATE TABLE event_categories (
-    category_id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    description TEXT
-);
 
 -- MAPPING EVENTS TO CATEGORIES
 --idfk whats this for lmao
