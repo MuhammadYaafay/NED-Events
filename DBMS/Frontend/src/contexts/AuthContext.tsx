@@ -46,36 +46,22 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   const refreshUser = async () => {
     try {
-      const token = localStorage.getItem("NEDevents-token");
+      const token = localStorage.getItem("authToken");
       if (!token) {
-        setUser(null);
-        return;
+        throw new Error("No authentication token found");
       }
 
-      try {
-        const userData = await apiRequest("/api/auth/getProfile", {
-          authenticated: true,
-        }) as User;
-        setUser(userData);
-      } catch (error) {
-        // Handle unauthorized errors silently
-        if (error instanceof Error && error.message.includes("401")) {
-          localStorage.removeItem("NEDevents-token");
-          setAuthToken("");
-          setUser(null);
-          return;
-        }
-        
-        // Log other errors but don't throw them
-        console.error("Error refreshing user:", error);
-        setUser(null);
-      }
+      const response = await apiRequest("/api/auth/refresh", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setUser(response.user);
     } catch (error) {
-      // Handle any unexpected errors
-      console.error("Unexpected error in refreshUser:", error);
-      setUser(null);
-    } finally {
-      setLoading(false);
+      console.error("Error refreshing user:", error);
+      setUser(null); // Clear user state on error
     }
   };
 

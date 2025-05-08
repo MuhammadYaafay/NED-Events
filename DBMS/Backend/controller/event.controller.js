@@ -216,10 +216,12 @@ const getEventById = async (req, res) => {
         e.description,
         e.start_date,
         e.end_date,
-        e.start_time,
-        e.end_time,
+        e.event_time,
+        e.category,
         e.location,
         e.organizer_id,
+        u.name,
+        u.profile_image,
         t.max_quantity,
         e.status,
         e.image,
@@ -227,6 +229,7 @@ const getEventById = async (req, res) => {
         e.updated_at,
         t.ticket_id,
         t.price AS ticket_price,
+        COALESCE(COUNT(tp.purchase_id), 0) AS booking_count,
         s.stall_id,
         s.price AS stall_price,
         CASE WHEN s.stall_id IS NOT NULL THEN 1 ELSE 0 END AS has_stall,
@@ -234,7 +237,14 @@ const getEventById = async (req, res) => {
       FROM events e
       LEFT JOIN tickets t ON t.event_id = e.event_id
       LEFT JOIN stalls s ON s.event_id = e.event_id
+      LEFT JOIN ticket_purchases tp ON tp.ticket_id = t.ticket_id
+      LEFT JOIN users u ON u.user_id = e.organizer_id
       WHERE e.event_id = ?
+      GROUP BY 
+      e.event_id, e.title, e.description, e.start_date, e.end_date,
+      e.event_time, e.category, e.location, e.organizer_id, u.name,
+      u.profile_image, t.max_quantity, e.status, e.image, e.created_at,
+      e.updated_at, t.ticket_id, t.price, s.stall_id, s.price
       LIMIT 1
       `,
       [eventid]
@@ -327,6 +337,44 @@ const deleteEvent = async (req, res) => {
   }
 };
 
+//get events for a specific attendee
+const getEventsByAttendee = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+
+    const [eventRows] = await db.query(
+      `
+      SELECT 
+        e.event_id,
+        e.title,
+        e.start_date,
+        e.end_date,
+        t.price AS ticket_price,
+        tp.quantity AS tickets_booked
+        tp.status
+      FROM events e
+      JOIN tickets t ON t.event_id = e.event_id
+      LEFT JOIN ticket_purchases tp ON tp.ticket_id = t.ticket_id AND tp.user_id = ?
+      WHERE tp.user_id = ?
+      `,
+      [userId, userId]
+    );
+
+    if (eventRows.length === 0) {
+      return res.status(404).json({ message: "No events found for this user" });
+    }
+
+    res.status(200).json(eventRows);
+  } catch (error) {
+    console.error("Error fetching events:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
 const getAllEventsByOrganizer = async (req, res) => {
   try {
     const { organizerId } = req.user;
@@ -373,4 +421,5 @@ module.exports = {
   updateEvent,
   deleteEvent,
   getAllEventsByOrganizer,
+  getEventsByAttendee,
 };

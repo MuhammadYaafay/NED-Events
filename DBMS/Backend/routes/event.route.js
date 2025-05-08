@@ -7,6 +7,7 @@ const {
   deleteEvent,
   getAllEventsByOrganizer,
   getTrendingEvents,
+  getEventsByAttendee
 } = require("../controller/event.controller");
 const { verifyToken, isOrganizer } = require("../middlewares/auth.middleware");
 
@@ -19,5 +20,5 @@ router.get("/:eventid", getEventById);
 router.put("/:id", verifyToken, isOrganizer, updateEvent);
 router.delete("/:id", verifyToken, isOrganizer, deleteEvent);
 router.get("/getByOrganizer", getAllEventsByOrganizer);
-
+router.get("/getByAttendee", verifyToken, getEventsByAttendee);
 module.exports = router;

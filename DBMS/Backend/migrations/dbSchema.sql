@@ -28,6 +28,7 @@ CREATE TABLE
         start_date DATETIME,
         end_date DATETIME,
         location VARCHAR(255),
+        event_time VARCHAR(50),
         organizer_id INT NOT NULL,
         capacity INT,
         status ENUM ('upcoming', 'ongoing', 'completed', 'cancelled') DEFAULT 'upcoming',
@@ -41,29 +42,13 @@ CREATE TABLE
         -- FOREIGN KEY (ticket_id) REFERENCES tickets (ticket_id), -- this is not needed here bcz ticket_id is not a part of events table it is a part of tickets table also it is creating a circular dependency
         FOREIGN KEY (organizer_id) REFERENCES users (user_id)
     );
--- EVENTS
-CREATE TABLE events (
-    event_id INT AUTO_INCREMENT PRIMARY KEY,
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    start_date DATETIME,
-    end_date DATETIME,
-    location VARCHAR(255),
-    category VARCHAR(255), 
-    organizer_id INT NOT NULL,
-    status ENUM('upcoming', 'ongoing', 'completed', 'cancelled') DEFAULT 'upcoming',
-    image VARCHAR(255),
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (organizer_id) REFERENCES users(user_id)
 
-);
 
 CREATE TABLE
     event_categories (
         category_id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
-        description TEXT
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        description TEXT created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         UNIQUE KEY (name) --this will make sure that we dont have duplicate entries for same category
     );
@@ -135,17 +120,8 @@ CREATE TABLE
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (stall_id) REFERENCES stalls (stall_id) ON DELETE CASCADE,
         FOREIGN KEY (vendor_id) REFERENCES users (user_id) ON DELETE CASCADE,
-        INDEX (stall_id, name) 
+        INDEX (stall_id, name)
     );
--- STALL DETAILS for events
-CREATE TABLE stalls (
-    stall_id INT AUTO_INCREMENT PRIMARY KEY, 
-    event_id INT NOT NULL,
-    size VARCHAR(50),
-    price DECIMAL(10, 2) NOT NULL,
-    max_quantity INT NOT NULL, -- limit to how many stalls can be booked
-    FOREIGN KEY (event_id) REFERENCES events(event_id) ON DELETE CASCADE
-);
 
 --this one will record who bought which stall when and for how much 
 CREATE TABLE
@@ -163,17 +139,7 @@ CREATE TABLE
         UNIQUE KEY (stall_id, vendor_id),
         INDEX (vendor_id)
     );
--- RECORD OF STALL BOOKINGS
-CREATE TABLE stall_bookings (
-    booking_id INT AUTO_INCREMENT PRIMARY KEY,
-    stall_id INT NOT NULL,  -- which event's stall
-    vendor_id INT NOT NULL, -- from users table
-    quantity INT NOT NULL,  -- how many stalls booked
-    status ENUM('confirmed', 'cancelled', 'refunded') DEFAULT 'confirmed',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (stall_id) REFERENCES stalls(stall_id) ON DELETE CASCADE,
-    FOREIGN KEY (vendor_id) REFERENCES users(user_id)
-);
+
 
 --payments wont be used much cuz our payment functionality wont work
 CREATE TABLE
@@ -239,57 +205,19 @@ CREATE TABLE
         UNIQUE KEY (event_id, user_id),
         INDEX (user_id)
     );
--- PAYMENTS (ticket or stall related)
-CREATE TABLE payments (
-    payment_id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    amount DECIMAL(10, 2) NOT NULL,
-    payment_method VARCHAR(50),
-    payment_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-    status ENUM('pending', 'completed', 'failed', 'refunded') DEFAULT 'pending',
-    receipt_url VARCHAR(255),
-
-    related_type ENUM('ticket', 'stall') NOT NULL, -- polymorphic relation
-    related_id INT NOT NULL,    -- will be ticket_id or stall_id based on type
-
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
-    -- NOTE: related_id is polymorphic; cannot be enforced with FK
-);
 
 -- NOTIFICATIONS (like booking confirmation, status change)
-CREATE TABLE notifications (
-    notification_id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    title VARCHAR(255),
-    message TEXT,
-    type VARCHAR(100),
-    is_read BOOLEAN DEFAULT FALSE, -- notification will die when this becomes true
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
-);
-
--- BOOKMARKS / SAVED EVENTS
-CREATE TABLE event_favorites (
-    favorite_id INT AUTO_INCREMENT PRIMARY KEY,
-    event_id INT NOT NULL,
-    user_id INT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (event_id) REFERENCES events(event_id),
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
-);
-
--- EVENT REVIEWS
-CREATE TABLE event_reviews (
-    review_id INT AUTO_INCREMENT PRIMARY KEY,
-    event_id INT NOT NULL,
-    user_id INT NOT NULL,
-    rating TINYINT CHECK (rating >= 1 AND rating <= 6),
-    comment TEXT,   -- actual review content
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,  
-    FOREIGN KEY (event_id) REFERENCES events(event_id),
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
-);
+CREATE TABLE
+    notifications (
+        notification_id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        title VARCHAR(255),
+        message TEXT,
+        type VARCHAR(100),
+        is_read BOOLEAN DEFAULT FALSE, -- notification will die when this becomes true
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users (user_id)
+    );
 
 CREATE TABLE
     event_reviews (

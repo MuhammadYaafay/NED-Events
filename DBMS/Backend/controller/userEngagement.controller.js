@@ -174,7 +174,7 @@ const getAllReviews = async (req, res) => {
 
     const [reviews] = await db.query(
       `SELECT 
-        u.name AS userName, u.profile_image AS userImage, er.comment, er.rating, er.created_at AS reviewDate
+        u.name AS userName, u.profile_image AS userImage, er.review_id, er.comment, er.rating, er.created_at AS reviewDate
         FROM event_reviews er
         JOIN users u ON er.user_id = u.user_id
         WHERE event_id = ?

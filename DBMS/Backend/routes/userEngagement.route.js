@@ -17,6 +17,6 @@ router.get('/getAllFavourites', verifyToken, getAllFavourites);
 router.post('/addReview/:event_id', verifyToken, addReview);
 router.patch('/updateReview/:event_id', verifyToken, updateReview);
 router.delete('/deleteReview/:event_id', verifyToken, deleteReview);
-router.get('/getAllReviews/:event_id', verifyToken, getAllReviews);
+router.get('/getAllReviews/:event_id', getAllReviews);
 
 module.exports = router;
