@@ -122,37 +122,36 @@ const requestStallBooking = async (req, res) => {
 //get all vendor's request
 const getStallBookingRequests = async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ message: errors.array() });
-    }
+    const organizerId = req.user.id;
 
     const [requests] = await db.query(
       `SELECT 
         sb.booking_id,
         u.name AS vendor_name,
         e.title AS event_name,
+        e.event_id,
         sb.status,
         sb.booking_date
       FROM stall_bookings sb
       JOIN users u ON sb.vendor_id = u.user_id
       JOIN stalls s ON sb.stall_id = s.stall_id
       JOIN events e ON s.event_id = e.event_id
-      WHERE sb.status != 'confirmed'
-      ORDER BY sb.booking_date DESC`
+      WHERE e.organizer_id = ? AND sb.status = 'pending'
+      ORDER BY sb.booking_date DESC`,
+      [organizerId]
     );
 
-    if (requests.length === 0) {
-      return res.status(404).json({ message: "No pending requests found" });
-    }
-
+    // Always return a 200 response with the requests array (empty if none found)
     res.status(200).json({
-      message: "Requests fetched successfully",
-      requests,
+      message: requests.length ? "Requests fetched successfully" : "No pending requests",
+      requests: requests
     });
   } catch (error) {
-    console.error("Error in getStallBookingRequests:", error);
-    res.status(500).json({ message: "Requests fetching failed" });
+    console.error("Error fetching stall booking requests:", error);
+    res.status(500).json({
+      message: "Failed to fetch stall booking requests",
+      requests: []
+    });
   }
 };
 

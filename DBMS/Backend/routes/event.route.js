@@ -16,9 +16,10 @@ const router = express.Router();
 router.post("/create", verifyToken, isOrganizer, createEvent);
 router.get("/", getAllEvents);
 router.get("/eventHistory", verifyToken, eventHistory);
+router.get("/getByOrganizer", verifyToken, isOrganizer, getAllEventsByOrganizer);
 router.get("/trending", getTrendingEvents);
 router.get("/:eventid", getEventById);
 router.put("/:id", verifyToken, isOrganizer, updateEvent);
 router.delete("/:id", verifyToken, isOrganizer, deleteEvent);
-router.get("/getByOrganizer", isOrganizer, getAllEventsByOrganizer);
+
 module.exports = router;

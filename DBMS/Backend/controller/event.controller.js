@@ -375,7 +375,7 @@ const eventHistory = async (req, res) => {
 
 const getAllEventsByOrganizer = async (req, res) => {
   try {
-    const { organizerId } = req.user;
+    const organizerId = req.user.id;
 
     if (!organizerId) {
       return res.status(400).json({ message: "Organizer ID is required" });
@@ -388,21 +388,22 @@ const getAllEventsByOrganizer = async (req, res) => {
         e.event_id,
         e.title,
         e.start_date,
+        e.status,
         COUNT(DISTINCT tp.user_id) AS total_attendees
       FROM events e
-      JOIN tickets t ON t.event_id = e.event_id
+LEFT JOIN tickets t ON t.event_id = e.event_id
       LEFT JOIN ticket_purchases tp ON tp.ticket_id = t.ticket_id
       WHERE e.organizer_id = ?
-      GROUP BY e.event_id
+      GROUP BY e.event_id, e.title, e.start_date, e.status
       `,
       [organizerId]
     );
 
     if (eventRows.length === 0) {
-      return res.status(404).json({ message: "No events found for this organizer" });
+      return res.json([]); // Return empty array instead of 404 to avoid error
     }
 
-    res.status(200).json(eventRows);
+    res.json(eventRows);
   } catch (error) {
     console.error("Error fetching events:", error);
     res.status(500).json({ message: "Internal Server Error" });

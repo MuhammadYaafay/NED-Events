@@ -206,18 +206,6 @@ CREATE TABLE
         INDEX (user_id)
     );
 
--- NOTIFICATIONS (like booking confirmation, status change)
-CREATE TABLE
-    notifications (
-        notification_id INT AUTO_INCREMENT PRIMARY KEY,
-        user_id INT NOT NULL,
-        title VARCHAR(255),
-        message TEXT,
-        type VARCHAR(100),
-        is_read BOOLEAN DEFAULT FALSE, -- notification will die when this becomes true
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users (user_id)
-    );
 
 CREATE TABLE
     event_reviews (

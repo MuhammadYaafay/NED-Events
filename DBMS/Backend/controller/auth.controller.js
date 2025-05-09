@@ -102,8 +102,7 @@ const login = async (req, res) => {
 const getProfile = async (req, res) => {
   try {
     const [users] = await db.query(
-
-      `SELECT user_id, name, email, role, profile_image, created_at FROM users WHERE user_id = ?`,
+      `SELECT name, email, profile_image AS image_url FROM users WHERE user_id = ?`,
       [req.user.id]
     );
 
@@ -111,11 +110,14 @@ const getProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
     const user = users[0];
-    res.json(user);
+    res.json({
+      name: user.name,
+      email: user.email,
+      image_url: user.image_url,
+    });
   } catch (error) {
     console.error("get profile error", error);
     res.status(500).json({ message: "Internal Server Error" });
-    
   }
 };
 
