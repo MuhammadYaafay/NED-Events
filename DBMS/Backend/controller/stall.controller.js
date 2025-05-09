@@ -235,19 +235,21 @@ const getVendorProducts = async (req, res) => {
 
     const vendor_id = req.user.id;
     const [products] = await db.query(
-      `SELECT name, price, image FROM products WHERE vendor_id = ?`,
+      `SELECT product_id, name, price, image FROM products WHERE vendor_id = ?`,
       [vendor_id]
     );
-    if (products.length === 0) {
-      return res.status(404).json({ message: "Products not found" });
-    }
+
+    // Always return 200 with products array (empty if none found)
     res.status(200).json({
-      message: "Products fetched successfully",
-      products: products,
+      message: products.length ? "Products fetched successfully" : "No products found",
+      products: products
     });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Products fetching failed" });
+    console.error("Error fetching vendor products:", error);
+    res.status(500).json({ 
+      message: "Error fetching products", 
+      products: [] 
+    });
   }
 };
 
@@ -377,6 +379,7 @@ const getVendorEvents = async (req, res) => {
     const vendor_id = req.user.id;
     const [events] = await db.query(
       `SELECT 
+        e.event_id,
         e.title AS event_name, 
         e.start_date AS date, 
         sb.status 
@@ -386,16 +389,17 @@ const getVendorEvents = async (req, res) => {
         WHERE sb.vendor_id = ?`,
       [vendor_id]
     );
-    if (events.length === 0) {
-      return res.status(404).json({ message: "Events not found" });
-    }
+
     res.status(200).json({
-      message: "Events fetched successfully",
-      events: events,
+      message: events.length ? "Events fetched successfully" : "No events found",
+      events: events
     });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Events fetching failed" });
+    console.error("Error fetching vendor events:", error);
+    res.status(500).json({ 
+      message: "Error fetching events",
+      events: []
+    });
   }
 };
 
@@ -410,9 +414,10 @@ const getVendorStallBookingRequestsHistory = async (req, res) => {
     const vendor_id = req.user.id;
     const [requests] = await db.query(
       `SELECT 
+        sb.booking_id,
         e.title AS event_name, 
         e.start_date AS date, 
-        s.stall_number
+        s.stall_number,
         sb.status 
         FROM stall_bookings sb
         JOIN stalls s ON sb.stall_id = s.stall_id
@@ -420,16 +425,17 @@ const getVendorStallBookingRequestsHistory = async (req, res) => {
         WHERE sb.vendor_id = ?`,
       [vendor_id]
     );
-    if (requests.length === 0) {
-      return res.status(404).json({ message: "Requests not found" });
-    }
+
     res.status(200).json({
-      message: "Requests fetched successfully",
-      requests: requests,
+      message: requests.length ? "Requests fetched successfully" : "No booking requests found",
+      requests: requests
     });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Requests fetching failed" });
+    console.error("Error fetching booking requests history:", error);
+    res.status(500).json({ 
+      message: "Error fetching booking requests", 
+      requests: [] 
+    });
   }
 };
 

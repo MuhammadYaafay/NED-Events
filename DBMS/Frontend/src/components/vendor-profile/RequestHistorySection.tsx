@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,32 +11,19 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-// Update the request history data type to match what's expected
-const requestHistoryData = [
-  {
-    id: 1,
-    eventName: "Tech Conference 2023",
-    stallNumber: "B12",
-    date: "Oct 15, 2023",
-    status: "approved"
-  },
-  {
-    id: 2,
-    eventName: "Digital Marketing Summit",
-    stallNumber: "A05",
-    date: "Nov 20, 2023",
-    status: "pending"
-  },
-  {
-    id: 3,
-    eventName: "Startup Expo 2023",
-    stallNumber: "C08",
-    date: "Dec 5, 2023",
-    status: "rejected"
-  },
-];
+interface RequestHistory {
+  booking_id: number;
+  event_name: string;
+  date: string;
+  stall_number: string;
+  status: string;
+}
 
-export function RequestHistorySection() {
+interface RequestHistoryProps {
+  history: RequestHistory[];
+}
+
+export function RequestHistorySection({ history }: RequestHistoryProps) {
   return (
     <div className="space-y-6">
       <Card>
@@ -50,29 +36,29 @@ export function RequestHistorySection() {
             <TableHeader>
               <TableRow>
                 <TableHead>Event Name</TableHead>
-                <TableHead>Stall Number</TableHead>
                 <TableHead>Date</TableHead>
+                <TableHead>Stall Number</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {requestHistoryData.map((request) => (
-                <TableRow key={request.id}>
-                  <TableCell className="font-medium">{request.eventName}</TableCell>
-                  <TableCell>{request.stallNumber}</TableCell>
+              {history.map((request) => (
+                <TableRow key={request.booking_id}>
+                  <TableCell className="font-medium">{request.event_name}</TableCell>
                   <TableCell>{request.date}</TableCell>
+                  <TableCell>{request.stall_number}</TableCell>
                   <TableCell>
                     <Badge
                       variant={
-                        request.status === "approved"
+                        request.status === "confirmed"
                           ? "default"
                           : request.status === "pending"
                           ? "outline"
                           : "destructive"
                       }
                     >
-                      {request.status === "approved" ? (
+                      {request.status === "confirmed" ? (
                         <CheckCircle className="mr-1 h-3 w-3" />
                       ) : request.status === "pending" ? (
                         <Clock className="mr-1 h-3 w-3" />

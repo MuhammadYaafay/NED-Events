@@ -1,4 +1,3 @@
-
 import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import { CardTitle, CardDescription } from "@/components/ui/card";
@@ -6,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 
 interface Product {
-  id: number;
+  product_id: number;
   name: string;
   price: string;
   image: string;
@@ -50,7 +49,7 @@ const ProductsSection = ({ products }: ProductsSectionProps) => {
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {products.map(product => (
-            <Card key={product.id} className="overflow-hidden">
+            <Card key={product.product_id} className="overflow-hidden">
               <div className="h-48 bg-gray-100">
                 <img 
                   src={product.image} 
@@ -63,10 +62,10 @@ const ProductsSection = ({ products }: ProductsSectionProps) => {
                 <p className="text-sm text-muted-foreground">{product.price}</p>
               </CardContent>
               <CardFooter className="flex justify-between p-4 pt-0">
-                <Button variant="outline" size="sm" onClick={() => handleEditProduct(product.id)}>
+                <Button variant="outline" size="sm" onClick={() => handleEditProduct(product.product_id)}>
                   Edit
                 </Button>
-                <Button variant="destructive" size="sm" onClick={() => handleRemoveProduct(product.id)}>
+                <Button variant="destructive" size="sm" onClick={() => handleRemoveProduct(product.product_id)}>
                   Remove
                 </Button>
               </CardFooter>

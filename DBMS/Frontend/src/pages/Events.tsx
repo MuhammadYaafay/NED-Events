@@ -1,14 +1,29 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { Calendar as CalendarIcon, Search, X, Filter, ChevronDown, SlidersHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  Calendar as CalendarIcon,
+  Search,
+  X,
+  Filter,
+  ChevronDown,
+  SlidersHorizontal,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import EventCard from '@/components/EventCard';
-import PageTransition from '@/components/PageTransition';
-import { apiRequest } from '@/utils/apiUtils';
+import EventCard from "@/components/EventCard";
+import PageTransition from "@/components/PageTransition";
+import { apiRequest } from "@/utils/apiUtils";
 
 interface eventsData {
   event_id: string;
@@ -23,56 +38,61 @@ interface eventsData {
 }
 
 const categoryOptions = [
-  { value: 'all', label: 'All Categories' },
-  { value: 'technology', label: 'Technology' },
-  { value: 'music', label: 'Music' },
-  { value: 'food & drink', label: 'Food & Drink' },
-  { value: 'workshop', label: 'Workshop' },
-  { value: 'networking', label: 'Networking' },
-  { value: 'health', label: 'Health' },
-  { value: 'arts', label: 'Arts' },
+  { value: "all", label: "All Categories" },
+  { value: "technology", label: "Technology" },
+  { value: "music", label: "Music" },
+  { value: "food & drink", label: "Food & Drink" },
+  { value: "workshop", label: "Workshop" },
+  { value: "networking", label: "Networking" },
+  { value: "health", label: "Health" },
+  { value: "arts", label: "Arts" },
 ];
 
 const Events = () => {
   const [upcomingEvents, setUpcomingEvents] = useState<eventsData[]>([]);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [priceRange, setPriceRange] = useState([0, 500]);
   const navigate = useNavigate();
 
-    useEffect(() => {
-      const fetchEvents = async () => {
-        try {
-          const upcoming = (await apiRequest("/api/event/")) as eventsData[];
-          setUpcomingEvents(upcoming);
-          setLoading(false);
-        } catch (error) {
-          console.error("Error fetching events:", error);
-        } finally {
-          setLoading(false);
-        }
-      };
-  
-      fetchEvents();
-    }, []);
-  
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const upcoming = (await apiRequest("/api/event/")) as eventsData[];
+        setUpcomingEvents(upcoming);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching events:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvents();
+  }, []);
 
   const toggleFilters = () => {
     setShowFilters(!showFilters);
   };
 
-  const filteredEvents = upcomingEvents.filter(event => {
-    const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          event.location.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesCategory = selectedCategory === 'all' || 
-                           event.category.toLowerCase() === selectedCategory.toLowerCase();
-    
-    const eventPrice = event.ticket_price === 'Free' ? 0 : parseInt(event.ticket_price.replace('$', ''));
-    const matchesPrice = eventPrice >= priceRange[0] && eventPrice <= priceRange[1];
-    
+  const filteredEvents = upcomingEvents.filter((event) => {
+    const matchesSearch =
+      event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      event.location.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesCategory =
+      selectedCategory === "all" ||
+      event.category.toLowerCase() === selectedCategory.toLowerCase();
+
+    const eventPrice =
+      event.ticket_price === "Free"
+        ? 0
+        : parseInt(event.ticket_price.replace("$", ""));
+    const matchesPrice =
+      eventPrice >= priceRange[0] && eventPrice <= priceRange[1];
+
     return matchesSearch && matchesCategory && matchesPrice;
   });
 
@@ -83,26 +103,33 @@ const Events = () => {
           <div className="flex flex-col space-y-4 md:space-y-0 md:flex-row md:justify-between md:items-center mb-8">
             <div>
               <h1 className="text-3xl font-bold mb-2">Discover Events</h1>
-              <p className="text-gray-400">Find your next experience from {upcomingEvents.length} upcoming events</p>
+              <p className="text-gray-400">
+                Find your next experience from {upcomingEvents.length} upcoming
+                events
+              </p>
             </div>
-            
+
             <div className="flex space-x-3">
-              <Button 
-                variant="outline" 
-                className="flex items-center" 
+              <Button
+                variant="outline"
+                className="flex items-center"
                 onClick={toggleFilters}
               >
                 <SlidersHorizontal className="h-4 w-4 mr-2" />
                 Filters
-                <ChevronDown className={`h-4 w-4 ml-2 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+                <ChevronDown
+                  className={`h-4 w-4 ml-2 transition-transform ${
+                    showFilters ? "rotate-180" : ""
+                  }`}
+                />
               </Button>
-              
+
               <Link to="/create-event">
                 <Button>Host an Event</Button>
               </Link>
             </div>
           </div>
-          
+
           <div className="relative mb-6">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search className="h-5 w-5 text-gray-400" />
@@ -115,21 +142,30 @@ const Events = () => {
               className="pl-10 bg-card/50 border-gray-800 h-12"
             />
             {searchTerm && (
-              <button 
+              <button
                 className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                onClick={() => setSearchTerm('')}
+                onClick={() => setSearchTerm("")}
               >
                 <X className="h-5 w-5 text-gray-400 hover:text-white" />
               </button>
             )}
           </div>
-          
-          <div className={`overflow-hidden transition-all duration-300 ${showFilters ? 'max-h-96 opacity-100 mb-8' : 'max-h-0 opacity-0'}`}>
+
+          <div
+            className={`overflow-hidden transition-all duration-300 ${
+              showFilters ? "max-h-96 opacity-100 mb-8" : "max-h-0 opacity-0"
+            }`}
+          >
             <div className="bg-card/50 backdrop-blur-sm p-6 rounded-xl border border-gray-800">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Category</label>
-                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                  <label className="block text-sm font-medium mb-2">
+                    Category
+                  </label>
+                  <Select
+                    value={selectedCategory}
+                    onValueChange={setSelectedCategory}
+                  >
                     <SelectTrigger className="bg-card border-gray-800">
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
@@ -142,9 +178,11 @@ const Events = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium mb-2">Price Range: ${priceRange[0]} - ${priceRange[1]}</label>
+                  <label className="block text-sm font-medium mb-2">
+                    Price Range: ${priceRange[0]} - ${priceRange[1]}
+                  </label>
                   <Slider
                     className="mt-4"
                     defaultValue={[0, 500]}
@@ -155,14 +193,14 @@ const Events = () => {
                   />
                 </div>
               </div>
-              
+
               <div className="flex justify-end mt-6">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="mr-2"
                   onClick={() => {
-                    setSearchTerm('');
-                    setSelectedCategory('all');
+                    setSearchTerm("");
+                    setSelectedCategory("all");
                     setPriceRange([0, 500]);
                   }}
                 >
@@ -172,10 +210,11 @@ const Events = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="flex justify-between items-center mb-6">
             <p className="text-gray-400">
-              {filteredEvents.length} {filteredEvents.length === 1 ? 'result' : 'results'} found
+              {filteredEvents.length}{" "}
+              {filteredEvents.length === 1 ? "result" : "results"} found
             </p>
             <Select defaultValue="newest">
               <SelectTrigger className="w-[180px] bg-card/50 border-gray-800">
@@ -190,10 +229,10 @@ const Events = () => {
               </SelectContent>
             </Select>
           </div>
-          
+
           {filteredEvents.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredEvents.map(event => (
+              {filteredEvents.map((event) => (
                 <EventCard key={event.event_id} {...event} />
               ))}
             </div>
@@ -206,11 +245,11 @@ const Events = () => {
               <p className="text-gray-400 mb-6">
                 We couldn't find any events matching your current filters.
               </p>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => {
-                  setSearchTerm('');
-                  setSelectedCategory('all');
+                  setSearchTerm("");
+                  setSelectedCategory("all");
                   setPriceRange([0, 500]);
                 }}
               >
@@ -218,17 +257,40 @@ const Events = () => {
               </Button>
             </div>
           )}
-          
+
           {filteredEvents.length > 0 && (
             <div className="flex justify-center mt-12">
               <nav className="flex items-center space-x-1">
-                <Button variant="outline" size="icon" className="h-9 w-9 border-gray-800" disabled>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9 border-gray-800"
+                  disabled
+                >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <Button size="sm" className="px-4 h-9">1</Button>
-                <Button variant="outline" size="sm" className="px-4 h-9 border-gray-800">2</Button>
-                <Button variant="outline" size="sm" className="px-4 h-9 border-gray-800">3</Button>
-                <Button variant="outline" size="icon" className="h-9 w-9 border-gray-800">
+                <Button size="sm" className="px-4 h-9">
+                  1
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="px-4 h-9 border-gray-800"
+                >
+                  2
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="px-4 h-9 border-gray-800"
+                >
+                  3
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9 border-gray-800"
+                >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </nav>
