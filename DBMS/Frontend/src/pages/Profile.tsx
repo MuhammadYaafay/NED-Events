@@ -42,12 +42,13 @@ import {
 } from "@/components/ui/table";
 import PageTransition from "@/components/PageTransition";
 import { apiRequest } from "@/utils/apiUtils";
+import { getAuthToken } from "@/utils/authUtils";
 
 interface eventHistory {
   event_id: string;
   title: string;
   start_date: string;
-  status: string;
+  purchase_status: string;
 }
 
 interface favoriteEvent {
@@ -74,83 +75,168 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState<profileData | null>(null);
+  const [apiErrors, setApiErrors] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchEventsHistory = async () => {
       try {
-        const history = (await apiRequest(
-          "/api/userEngagement/getEventHistory",
+        const token = getAuthToken();
+        if (!token) {
+          console.error("No authentication token found");
+          return;
+        }
+
+        const history = await apiRequest<eventHistory[]>(
+          "/api/event/eventHistory",
           {
             method: "GET",
-            authenticated: true,
+            headers: {
+              "Authorization": `Bearer ${token}`
+            }
           }
-        )) as eventHistory[];
-        setEventHistory(history);
+        );
+        
+        if (Array.isArray(history)) {
+          setEventHistory(history);
+        } else {
+          console.error("Event history response is not an array:", history);
+          setEventHistory([]);
+        }
       } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
         console.error("Error fetching events:", error);
-        setEventHistory([]); // Handle empty state
+        setApiErrors(prev => [...prev, `Event history: ${message}`]);
+        setEventHistory([]);
       }
     };
 
-    fetchEventsHistory();
-  }, []);
+    if (isAuthenticated()) {
+      fetchEventsHistory();
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const fetchFavoriteEvents = async () => {
       try {
-        const favorites = (await apiRequest(
+        const token = getAuthToken();
+        if (!token) {
+          console.error("No authentication token found");
+          return;
+        }
+
+        const favorites = await apiRequest<favoriteEvent[]>(
           "/api/userEngagement/getAllFavourites",
           {
             method: "GET",
-            authenticated: true,
+            headers: {
+              "Authorization": `Bearer ${token}`
+            }
           }
-        )) as favoriteEvent[];
-        setFavoriteEvents(favorites);
+        );
+        
+        if (Array.isArray(favorites)) {
+          setFavoriteEvents(favorites);
+        } else {
+          console.error("Favorites response is not an array:", favorites);
+          setFavoriteEvents([]);
+        }
       } catch (error) {
-        console.error("Error fetching events:", error);
-        setFavoriteEvents([]); // Handle empty state
+        const message = error instanceof Error ? error.message : String(error);
+        console.error("Error fetching favorites:", error);
+        setApiErrors(prev => [...prev, `Favorites: ${message}`]);
+        setFavoriteEvents([]);
       }
     };
 
-    fetchFavoriteEvents();
-  }, []);
+    if (isAuthenticated()) {
+      fetchFavoriteEvents();
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const fetchProfileData = async () => {
       try {
-        const profile = (await apiRequest("/api/user/profileDetails", {
-          method: "GET",
-          authenticated: true,
-        })) as profileData;
+        const token = getAuthToken();
+        if (!token) {
+          console.error("No authentication token found");
+          return;
+        }
+
+        const profile = await apiRequest<profileData>(
+          "/api/auth/profile",
+          {
+            method: "GET",
+            headers: {
+              "Authorization": `Bearer ${token}`
+            }
+          }
+        );
+        
         setProfileData(profile);
-        setLoading(false);
       } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
         console.error("Error fetching profile data:", error);
+        setApiErrors(prev => [...prev, `Profile data: ${message}`]);
+        
+        if (user) {
+          setProfileData({
+            name: user.name || "",
+            email: user.email || "",
+            bio: ""
+          });
+        }
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProfileData();
-  }, []);
+    if (isAuthenticated()) {
+      fetchProfileData();
+    } else {
+      setLoading(false);
+    }
+  }, [isAuthenticated, user]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setProfileData((prevState) => ({
-      ...prevState,
-      [name]: value,
-    }));
+    setProfileData((prevState) => {
+      if (!prevState) return null;
+      return {
+        ...prevState,
+        [name]: value,
+      };
+    });
   };
 
   const handleEditProfile = () => {
     setIsEditing(true);
   };
 
-  const handleSaveProfile = () => {
-    // In a real app, you would save the profile data to a database
-    setIsEditing(false);
+  const handleSaveProfile = async () => {
+    try {
+      const token = getAuthToken();
+      if (!token || !profileData) {
+        console.error("No authentication token or profile data found");
+        return;
+      }
+
+      await apiRequest(
+        "/api/auth/profile",
+        {
+          method: "PUT", 
+          headers: {
+            "Authorization": `Bearer ${token}`
+          },
+          body: profileData
+        }
+      );
+      
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+    }
   };
 
   if (loading || !profileData) {
@@ -166,11 +252,22 @@ const Profile = () => {
   return (
     <PageTransition>
       <div className="container mx-auto py-12 px-4 md:px-0">
-        {" "}
-        {/* Increased top padding to fix navbar overlap */}
+        {apiErrors.length > 0 && (
+          <div className="mb-4 p-4 bg-red-50 text-red-800 rounded-md border border-red-200">
+            <h3 className="font-medium">API Errors:</h3>
+            <ul className="list-disc pl-5">
+              {apiErrors.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold">My Profile</h1>
-          <Badge variant="secondary">{user?.role.toUpperCase()}</Badge>
+          {user?.role && (
+            <Badge variant="secondary">{user.role.toUpperCase()}</Badge>
+          )}
         </div>
         <Tabs
           defaultValue="profile"
@@ -272,67 +369,72 @@ const Profile = () => {
                 <CalendarDays className="h-5 w-5 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableCaption>
-                    Your recent event attendance and bookings
-                  </TableCaption>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Event Name</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Ticket Type</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {eventHistory.map((event) => (
-                      <TableRow key={event.event_id}>
-                        <TableCell className="font-medium">
-                          {event.title}
-                        </TableCell>
-                        <TableCell>
-                          {new Date(event.start_date).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              event.status === "Upcoming"
-                                ? "outline"
-                                : "default"
-                            }
-                          >
-                            {event.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() =>
-                                navigate(`/event/${event.event_id}`)
-                              }
-                            >
-                              <FileText className="h-4 w-4 mr-2" />
-                              Details
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                navigate(`/receipt/${event.event_id}`)
-                              }
-                            >
-                              <Ticket className="h-4 w-4 mr-2" />
-                              Receipt
-                            </Button>
-                          </div>
-                        </TableCell>
+                {eventHistory.length > 0 ? (
+                  <Table>
+                    <TableCaption>
+                      Your recent event attendance and bookings
+                    </TableCaption>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Event Name</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {eventHistory.map((event) => (
+                        <TableRow key={event.event_id}>
+                          <TableCell className="font-medium">
+                            {event.title}
+                          </TableCell>
+                          <TableCell>
+                            {new Date(event.start_date).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                event.purchase_status === "Upcoming"
+                                  ? "outline"
+                                  : "default"
+                              }
+                            >
+                              {event.purchase_status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  navigate(`/event/${event.event_id}`)
+                                }
+                              >
+                                <FileText className="h-4 w-4 mr-2" />
+                                Details
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  navigate(`/receipt/${event.event_id}`)
+                                }
+                              >
+                                <Ticket className="h-4 w-4 mr-2" />
+                                Receipt
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <div className="py-6 text-center text-muted-foreground">
+                    You haven't attended any events yet.
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -349,113 +451,48 @@ const Profile = () => {
                 <Heart className="h-5 w-5 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {favoriteEvents.map((event) => (
-                    <Card key={event.event_id} className="overflow-hidden">
-                      <div className="aspect-video w-full overflow-hidden">
-                        <img
-                          src={event.image}
-                          alt={event.title}
-                          className="w-full h-full object-cover transition-transform hover:scale-105"
-                        />
-                      </div>
-                      <CardContent className="p-4">
-                        <h3 className="font-semibold text-lg mb-1">
-                          {event.title}
-                        </h3>
-                        <div className="flex items-center text-muted-foreground text-sm mb-2">
-                          <Calendar className="h-4 w-4 mr-1" />
-                          <span>{event.start_date}</span>
+                {favoriteEvents.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {favoriteEvents.map((event) => (
+                      <Card key={event.event_id} className="overflow-hidden">
+                        <div className="aspect-video w-full overflow-hidden">
+                          <img
+                            src={event.image}
+                            alt={event.title}
+                            className="w-full h-full object-cover transition-transform hover:scale-105"
+                          />
                         </div>
-                        <div className="flex items-center text-muted-foreground text-sm mb-3">
-                          <MapPin className="h-4 w-4 mr-1" />
-                          <span>{event.location}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <Badge>{event.ticket_price}</Badge>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => navigate(`/event/${event.event_id}`)}
-                          >
-                            View Details
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="settings" className="mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Account Settings</CardTitle>
-                <CardDescription>
-                  Manage your account preferences
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-lg font-medium mb-2">Notifications</h3>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="email-notif">Email Notifications</Label>
-                        <input
-                          type="checkbox"
-                          id="email-notif"
-                          className="toggle"
-                          defaultChecked
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="sms-notif">SMS Notifications</Label>
-                        <input
-                          type="checkbox"
-                          id="sms-notif"
-                          className="toggle"
-                        />
-                      </div>
-                    </div>
+                        <CardContent className="p-4">
+                          <h3 className="font-semibold text-lg mb-1">
+                            {event.title}
+                          </h3>
+                          <div className="flex items-center text-muted-foreground text-sm mb-2">
+                            <Calendar className="h-4 w-4 mr-1" />
+                            <span>{event.start_date}</span>
+                          </div>
+                          <div className="flex items-center text-muted-foreground text-sm mb-3">
+                            <MapPin className="h-4 w-4 mr-1" />
+                            <span>{event.location}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <Badge>{event.ticket_price}</Badge>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => navigate(`/event/${event.event_id}`)}
+                            >
+                              View Details
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
-
-                  <Separator />
-
-                  <div>
-                    <h3 className="text-lg font-medium mb-2">Privacy</h3>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="profile-public">Public Profile</Label>
-                        <input
-                          type="checkbox"
-                          id="profile-public"
-                          className="toggle"
-                          defaultChecked
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="share-history">
-                          Share Event History
-                        </Label>
-                        <input
-                          type="checkbox"
-                          id="share-history"
-                          className="toggle"
-                        />
-                      </div>
-                    </div>
+                ) : (
+                  <div className="py-6 text-center text-muted-foreground">
+                    You haven't favorited any events yet.
                   </div>
-
-                  <Separator />
-
-                  <div>
-                    <h3 className="text-lg font-medium mb-2">Security</h3>
-                    <Button variant="outline">Change Password</Button>
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

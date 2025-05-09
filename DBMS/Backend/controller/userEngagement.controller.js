@@ -75,16 +75,22 @@ const getAllFavourites = async (req, res) => {
   try {
     const user_id = req.user.id;
     const [favourites] = await db.query(
-        `SELECT 
-          e.title, e.start_date AS startDate, t.price, e.image, f.event_id, f.user_id
-         FROM event_favorites f 
-         JOIN events e ON f.event_id = e.event_id 
-         JOIN tickets t ON t.event_id = e.event_id
-         WHERE f.user_id = ?`,
-        [user_id]
-      );
+      `SELECT 
+        e.event_id,
+        e.title, 
+        e.start_date, 
+        e.location,
+        e.image, 
+        t.price AS ticket_price
+      FROM event_favorites f 
+      JOIN events e ON f.event_id = e.event_id 
+      JOIN tickets t ON t.event_id = e.event_id
+      WHERE f.user_id = ?`,
+      [user_id]
+    );
+
     if (favourites.length > 0) {
-      return res.status(200).json({ favourites });
+      return res.status(200).json(favourites); // send directly as array
     } else {
       return res.status(404).json({ message: "No favourites found" });
     }
@@ -93,6 +99,7 @@ const getAllFavourites = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
 
 //add review on eventDetailsPage
 const addReview = async (req, res) => {

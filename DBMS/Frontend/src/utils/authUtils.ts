@@ -10,7 +10,7 @@ export interface User {
 }
 
 export const getAuthToken = (): string | null => {
-  return localStorage.getItem("NEDevents-token");
+  return localStorage.getItem("token");
 };
 
 export const isAuthenticated = (): boolean => {
@@ -18,11 +18,11 @@ export const isAuthenticated = (): boolean => {
 };
 
 export const setAuthToken = (token: string): void => {
-  localStorage.setItem("NEDevents-token", token);
+  localStorage.setItem("token", token);
 };
 
 export const removeAuthToken = (): void => {
-  localStorage.removeItem("NEDevents-token");
+  localStorage.removeItem("token");
 };
 
 export const getAuthUser = async (): Promise<User | null> => {

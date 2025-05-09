@@ -338,7 +338,8 @@ const deleteEvent = async (req, res) => {
 };
 
 //get events for a specific attendee
-const getEventsByAttendee = async (req, res) => {
+// Get event history for a specific user (attendee)
+const eventHistory = async (req, res) => {
   try {
     const userId = req.user.id;
 
@@ -352,25 +353,22 @@ const getEventsByAttendee = async (req, res) => {
         e.event_id,
         e.title,
         e.start_date,
-        e.end_date,
-        t.price AS ticket_price,
-        tp.quantity AS tickets_booked
-        tp.status
-      FROM events e
-      JOIN tickets t ON t.event_id = e.event_id
-      LEFT JOIN ticket_purchases tp ON tp.ticket_id = t.ticket_id AND tp.user_id = ?
+        tp.status AS purchase_status
+      FROM ticket_purchases tp
+      JOIN tickets t ON tp.ticket_id = t.ticket_id
+      JOIN events e ON t.event_id = e.event_id
       WHERE tp.user_id = ?
       `,
-      [userId, userId]
+      [userId]
     );
 
     if (eventRows.length === 0) {
-      return res.status(404).json({ message: "No events found for this user" });
+      return res.status(404).json({ message: "No event history found for this user" });
     }
 
     res.status(200).json(eventRows);
   } catch (error) {
-    console.error("Error fetching events:", error);
+    console.error("Error fetching event history:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
@@ -421,5 +419,5 @@ module.exports = {
   updateEvent,
   deleteEvent,
   getAllEventsByOrganizer,
-  getEventsByAttendee,
+  eventHistory,
 };

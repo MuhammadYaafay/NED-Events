@@ -7,7 +7,7 @@ const {
   deleteEvent,
   getAllEventsByOrganizer,
   getTrendingEvents,
-  getEventsByAttendee
+  eventHistory
 } = require("../controller/event.controller");
 const { verifyToken, isOrganizer } = require("../middlewares/auth.middleware");
 
@@ -15,10 +15,10 @@ const router = express.Router();
 
 router.post("/create", verifyToken, isOrganizer, createEvent);
 router.get("/", getAllEvents);
+router.get("/eventHistory", verifyToken, eventHistory);
 router.get("/trending", getTrendingEvents);
 router.get("/:eventid", getEventById);
 router.put("/:id", verifyToken, isOrganizer, updateEvent);
 router.delete("/:id", verifyToken, isOrganizer, deleteEvent);
-router.get("/getByOrganizer", getAllEventsByOrganizer);
-router.get("/getByAttendee", verifyToken, getEventsByAttendee);
+router.get("/getByOrganizer", isOrganizer, getAllEventsByOrganizer);
 module.exports = router;
