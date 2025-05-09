@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -30,37 +29,147 @@ import {
   Users,
   Plus,
   Loader2,
-  Ticket
+  Ticket,
+  Store,
+  Loader
 } from 'lucide-react';
 import PageTransition from '@/components/PageTransition';
 import { toast } from "@/components/ui/use-toast";
+import { apiRequest } from "@/utils/apiUtils";
+import { compressImage } from "@/utils/imageUtils";
+
+interface EventFormData {
+  title: string;
+  description: string;
+  start_date: string;
+  end_date: string;
+  event_time: string;  // changed from time to event_time
+  category: string;
+  location: string;
+  image: string | null;
+  ticket_price: string;
+  ticket_max_quantity: string;
+  has_stall: boolean;
+  stall_price?: string;
+  stall_max_quantity?: string;
+}
 
 const CreateEvent = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [coverImage, setCoverImage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [eventType, setEventType] = useState('in-person');
+  const [imageLoading, setImageLoading] = useState(false);
+  
+  const [formData, setFormData] = useState<EventFormData>({
+    title: '',
+    description: '',
+    start_date: '',
+    end_date: '',
+    event_time: '',  // changed from time to event_time
+    category: '',
+    location: '',
+    image: null,
+    ticket_price: '',
+    ticket_max_quantity: '',
+    has_stall: false,
+    stall_price: '',
+    stall_max_quantity: ''
+  });
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setCoverImage(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+      if (file.size > 50 * 1024 * 1024) { // 50MB
+        toast({
+          title: "File Too Large",
+          description: "Please select an image smaller than 50MB",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      setImageLoading(true);
+      try {
+        const compressedFile = await compressImage(file, {
+          maxSizeMB: 1,
+          maxWidthOrHeight: 1920
+        });
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setCoverImage(e.target?.result as string);
+          setFormData(prev => ({
+            ...prev,
+            image: e.target?.result as string
+          }));
+        };
+        reader.onerror = () => {
+          toast({
+            title: "Error",
+            description: "Failed to read image file",
+            variant: "destructive"
+          });
+        };
+        reader.readAsDataURL(compressedFile);
+      } catch (error) {
+        console.error("Error processing image:", error);
+        toast({
+          title: "Error",
+          description: "Failed to process image. Please try a different file.",
+          variant: "destructive"
+        });
+      } finally {
+        setImageLoading(false);
+      }
     }
   };
 
   const handleRemoveImage = () => {
     setCoverImage(null);
+    setFormData(prev => ({ ...prev, image: null }));
+  };
+
+  const handleInputChange = (field: keyof EventFormData, value: string | boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const validateStep = (stepNumber: number): boolean => {
+    switch (stepNumber) {
+      case 1:
+        return Boolean(formData.title && formData.category);
+      case 2:
+        return Boolean(
+          formData.description && 
+          formData.start_date && 
+          formData.location
+        );
+      case 3:
+        return Boolean(
+          formData.ticket_price && 
+          formData.ticket_max_quantity && 
+          (!formData.has_stall || (formData.has_stall && formData.stall_price && formData.stall_max_quantity))
+        );
+      default:
+        return true;
+    }
   };
 
   const handleNext = () => {
-    if (step < 4) {
-      setStep(step + 1);
-      window.scrollTo(0, 0);
+    if (validateStep(step)) {
+      if (step < 4) {
+        setStep(step + 1);
+        window.scrollTo(0, 0);
+      }
+    } else {
+      toast({
+        title: "Required Fields Missing",
+        description: "Please fill in all required fields before continuing.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -71,18 +180,89 @@ const CreateEvent = () => {
     }
   };
 
-  const handleSubmit = () => {
-    setSaving(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setSaving(false);
-      toast({
-        title: "Event Created Successfully!",
-        description: "Your event has been published and is now live.",
+  const handleSubmit = async () => {
+    try {
+      setSaving(true);
+      
+      const response = await apiRequest("/api/event/create", {
+        method: "POST",
+        body: {
+          ...formData,
+          event_time: formData.event_time,  // explicitly include event_time
+          image: coverImage
+        },
+        authenticated: true  // Add this to include auth token
       });
-      navigate('/events');
-    }, 1500);
+
+      if (response) {
+        toast({
+          title: "Event Created Successfully!",
+          description: "Your event has been published and is now live.",
+        });
+        navigate('/events');
+      }
+    } catch (error) {
+      console.error("Error creating event:", error);
+      toast({
+        title: "Error Creating Event",
+        description: error instanceof Error ? error.message : "Please try again later",
+        variant: "destructive"
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const renderImageUpload = () => {
+    if (imageLoading) {
+      return (
+        <div className="border-2 border-dashed border-gray-700 rounded-lg p-12 text-center">
+          <div className="space-y-2">
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+              <Loader className="h-6 w-6 text-primary animate-spin" />
+            </div>
+            <div className="text-gray-300 font-medium">Processing image...</div>
+          </div>
+        </div>
+      );
+    }
+
+    if (coverImage) {
+      return (
+        <div className="relative rounded-lg overflow-hidden border border-gray-800 aspect-[16/9]">
+          <img 
+            src={coverImage} 
+            alt="Event cover" 
+            className="w-full h-full object-cover" 
+          />
+          <button 
+            onClick={handleRemoveImage}
+            className="absolute top-2 right-2 bg-black/70 hover:bg-black p-1 rounded-full"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="border-2 border-dashed border-gray-700 rounded-lg p-12 text-center hover:border-gray-500 transition-colors cursor-pointer relative">
+        <input 
+          type="file" 
+          id="coverImage" 
+          accept="image/*"
+          onChange={handleFileChange}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+        />
+        <div className="space-y-2">
+          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+            <Image className="h-6 w-6 text-primary" />
+          </div>
+          <div className="text-gray-300 font-medium">Upload Cover Image</div>
+          <p className="text-gray-400 text-sm">PNG, JPG up to 10MB (16:9 ratio recommended)</p>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -147,18 +327,8 @@ const CreateEvent = () => {
                       id="title" 
                       placeholder="Give your event a clear, descriptive name"
                       className="bg-card/50 border-gray-800"
-                    />
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between mb-1">
-                      <Label htmlFor="organizer">Organizer</Label>
-                      <span className="text-xs text-gray-400">Required</span>
-                    </div>
-                    <Input 
-                      id="organizer" 
-                      placeholder="Who is hosting this event?"
-                      className="bg-card/50 border-gray-800"
+                      value={formData.title}
+                      onChange={(e) => handleInputChange('title', e.target.value)}
                     />
                   </div>
                   
@@ -167,7 +337,7 @@ const CreateEvent = () => {
                       <Label htmlFor="category">Category</Label>
                       <span className="text-xs text-gray-400">Required</span>
                     </div>
-                    <Select>
+                    <Select onValueChange={(value) => handleInputChange('category', value)}>
                       <SelectTrigger className="bg-card/50 border-gray-800">
                         <SelectValue placeholder="Select event category" />
                       </SelectTrigger>
@@ -189,39 +359,7 @@ const CreateEvent = () => {
                       <Label htmlFor="cover">Cover Image</Label>
                       <span className="text-xs text-gray-400">Required</span>
                     </div>
-                    
-                    {coverImage ? (
-                      <div className="relative rounded-lg overflow-hidden border border-gray-800 aspect-[16/9]">
-                        <img 
-                          src={coverImage} 
-                          alt="Event cover" 
-                          className="w-full h-full object-cover" 
-                        />
-                        <button 
-                          onClick={handleRemoveImage}
-                          className="absolute top-2 right-2 bg-black/70 hover:bg-black p-1 rounded-full"
-                        >
-                          <X className="h-5 w-5" />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="border-2 border-dashed border-gray-700 rounded-lg p-12 text-center hover:border-gray-500 transition-colors cursor-pointer relative">
-                        <input 
-                          type="file" 
-                          id="coverImage" 
-                          accept="image/*" 
-                          onChange={handleFileChange}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
-                        />
-                        <div className="space-y-2">
-                          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                            <Image className="h-6 w-6 text-primary" />
-                          </div>
-                          <div className="text-gray-300 font-medium">Upload Cover Image</div>
-                          <p className="text-gray-400 text-sm">PNG, JPG up to 10MB (16:9 ratio recommended)</p>
-                        </div>
-                      </div>
-                    )}
+                    {renderImageUpload()}
                   </div>
                 </div>
                 
@@ -252,6 +390,8 @@ const CreateEvent = () => {
                       id="description" 
                       placeholder="Describe your event, what attendees can expect..."
                       className="bg-card/50 border-gray-800 min-h-[150px]"
+                      value={formData.description}
+                      onChange={(e) => handleInputChange('description', e.target.value)}
                     />
                     <div className="flex items-center mt-2 text-gray-400 text-xs">
                       <FileText className="h-3 w-3 mr-1" />
@@ -262,7 +402,7 @@ const CreateEvent = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <div className="flex justify-between mb-1">
-                        <Label htmlFor="start-date">Start Date</Label>
+                        <Label htmlFor="start_date">Start Date</Label>
                         <span className="text-xs text-gray-400">Required</span>
                       </div>
                       <div className="relative">
@@ -270,156 +410,73 @@ const CreateEvent = () => {
                           <CalendarIcon className="h-4 w-4" />
                         </div>
                         <Input 
-                          id="start-date" 
+                          id="start_date" 
                           type="date"
                           className="bg-card/50 border-gray-800 pl-10"
+                          value={formData.start_date}
+                          onChange={(e) => handleInputChange('start_date', e.target.value)}
                         />
                       </div>
                     </div>
                     
                     <div>
                       <div className="flex justify-between mb-1">
-                        <Label htmlFor="end-date">End Date</Label>
-                        <span className="text-xs text-gray-400">Optional</span>
+                        <Label htmlFor="end_date">End Date</Label>
+                        <span className="text-xs text-gray-400">Required</span>
                       </div>
                       <div className="relative">
                         <div className="absolute left-3 top-3 text-gray-400">
                           <CalendarIcon className="h-4 w-4" />
                         </div>
                         <Input 
-                          id="end-date" 
+                          id="end_date" 
                           type="date"
                           className="bg-card/50 border-gray-800 pl-10"
+                          value={formData.end_date}
+                          onChange={(e) => handleInputChange('end_date', e.target.value)}
                         />
                       </div>
                     </div>
                   </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <Label htmlFor="start-time">Start Time</Label>
-                        <span className="text-xs text-gray-400">Required</span>
-                      </div>
-                      <div className="relative">
-                        <div className="absolute left-3 top-3 text-gray-400">
-                          <Clock className="h-4 w-4" />
-                        </div>
-                        <Input 
-                          id="start-time" 
-                          type="time"
-                          className="bg-card/50 border-gray-800 pl-10"
-                        />
-                      </div>
+
+                  <div>
+                    <div className="flex justify-between mb-1">
+                      <Label htmlFor="event_time">Event Time</Label>
+                      <span className="text-xs text-gray-400">Required</span>
                     </div>
-                    
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <Label htmlFor="end-time">End Time</Label>
-                        <span className="text-xs text-gray-400">Optional</span>
+                    <div className="relative">
+                      <div className="absolute left-3 top-3 text-gray-400">
+                        <Clock className="h-4 w-4" />
                       </div>
-                      <div className="relative">
-                        <div className="absolute left-3 top-3 text-gray-400">
-                          <Clock className="h-4 w-4" />
-                        </div>
-                        <Input 
-                          id="end-time" 
-                          type="time"
-                          className="bg-card/50 border-gray-800 pl-10"
-                        />
-                      </div>
+                      <Input 
+                        id="event_time" 
+                        type="time"
+                        className="bg-card/50 border-gray-800 pl-10"
+                        value={formData.event_time}
+                        onChange={(e) => handleInputChange('event_time', e.target.value)}
+                      />
                     </div>
                   </div>
-                  
-                 
                   
                   <div>
                     <div className="flex justify-between mb-1">
-                      <Label htmlFor="capacity">Max Capacity</Label>
-                      <span className="text-xs text-gray-400">Optional</span>
+                      <Label htmlFor="location">Location</Label>
+                      <span className="text-xs text-gray-400">Required</span>
                     </div>
                     <div className="relative">
                       <div className="absolute left-3 top-3 text-gray-400">
-                        <Users className="h-4 w-4" />
+                        <MapPin className="h-4 w-4" />
                       </div>
                       <Input 
-                        id="capacity" 
-                        type="number"
-                        placeholder="Maximum number of attendees"
+                        id="location" 
+                        placeholder="Enter the event venue or address"
                         className="bg-card/50 border-gray-800 pl-10"
+                        value={formData.location}
+                        onChange={(e) => handleInputChange('location', e.target.value)}
                       />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex items-center space-x-2 mb-4">
-                      <Switch id="featured" />
-                      <Label htmlFor="featured">Feature this event on homepage</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Switch id="private" />
-                      <Label htmlFor="private">Private event (invitation only)</Label>
                     </div>
                   </div>
                 </div>
-
-                <div className="mb-8 pt-5">
-                  <h2 className="text-xl font-semibold mb-4">Stall Details</h2>
-                  <p className="text-gray-400">Want to add stalls in your event</p>
-                </div>
-
-                <div>
-                    <div className="flex justify-between mb-1">
-                      <Label htmlFor="capacity">Max Capacity</Label>
-                      <span className="text-xs text-gray-400">Optional</span>
-                    </div>
-                    <div className="relative">
-                      <div className="absolute left-3 top-3 text-gray-400">
-                        <Users className="h-4 w-4" />
-                      </div>
-                      <Input 
-                        id="capacity" 
-                        type="number"
-                        placeholder="Maximum number of stalls"
-                        className="bg-card/50 border-gray-800 pl-10"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between mb-1 pt-5">
-                      <Label htmlFor="capacity">Size</Label>
-                      <span className="text-xs text-gray-400">Optional</span>
-                    </div>
-                    <div className="relative">
-                      <div className="absolute left-3 top-3 text-gray-400">
-                        <Users className="h-4 w-4" />
-                      </div>
-                      <Input 
-                        id="capacity" 
-                        type="number"
-                        placeholder="Stalls size"
-                        className="bg-card/50 border-gray-800 pl-10"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between mb-1 pt-5">
-                      <Label htmlFor="capacity">Price</Label>
-                      <span className="text-xs text-gray-400">Optional</span>
-                    </div>
-                    <div className="relative">
-                      <div className="absolute left-3 top-3 text-gray-400">
-                        <Users className="h-4 w-4" />
-                      </div>
-                      <Input 
-                        id="capacity" 
-                        type="number"
-                        placeholder="Stalls price"
-                        className="bg-card/50 border-gray-800 pl-10"
-                      />
-                    </div>
-                  </div>
                 
                 <div className="mt-10 flex justify-between">
                   <Button variant="outline" onClick={handlePrevious}>
@@ -443,30 +500,18 @@ const CreateEvent = () => {
                 </div>
                 
                 <div className="space-y-6">
+                  {/* Ticket Section */}
                   <div>
                     <div className="flex items-center mb-4">
-                      <Badge className="mr-2">Ticket Type #1</Badge>
+                      <Badge className="mr-2">Tickets</Badge>
                       <h3 className="text-lg font-medium">Standard Ticket</h3>
                     </div>
                     
                     <div className="space-y-4 border border-gray-800 rounded-lg p-4">
-                      <div>
-                        <div className="flex justify-between mb-1">
-                          <Label htmlFor="ticket-name">Ticket Name</Label>
-                          <span className="text-xs text-gray-400">Required</span>
-                        </div>
-                        <Input 
-                          id="ticket-name" 
-                          placeholder="e.g., Standard, VIP, Early Bird"
-                          defaultValue="Standard Ticket"
-                          className="bg-card/50 border-gray-800"
-                        />
-                      </div>
-                      
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <div className="flex justify-between mb-1">
-                            <Label htmlFor="ticket-price">Price</Label>
+                            <Label htmlFor="ticket_price">Ticket Price</Label>
                             <span className="text-xs text-gray-400">Required</span>
                           </div>
                           <div className="relative">
@@ -474,9 +519,10 @@ const CreateEvent = () => {
                               <DollarSign className="h-4 w-4" />
                             </div>
                             <Input 
-                              id="ticket-price" 
+                              id="ticket_price" 
                               placeholder="0.00"
-                              defaultValue="99.00"
+                              value={formData.ticket_price}
+                              onChange={(e) => handleInputChange('ticket_price', e.target.value)}
                               className="bg-card/50 border-gray-800 pl-10"
                             />
                           </div>
@@ -484,40 +530,15 @@ const CreateEvent = () => {
                         
                         <div>
                           <div className="flex justify-between mb-1">
-                            <Label htmlFor="ticket-quantity">Quantity Available</Label>
+                            <Label htmlFor="ticket_max_quantity">Available Tickets</Label>
                             <span className="text-xs text-gray-400">Required</span>
                           </div>
                           <Input 
-                            id="ticket-quantity" 
+                            id="ticket_max_quantity" 
                             type="number"
                             placeholder="Number of tickets available"
-                            defaultValue="100"
-                            className="bg-card/50 border-gray-800"
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <div className="flex justify-between mb-1">
-                            <Label htmlFor="sale-start">Sale Start</Label>
-                            <span className="text-xs text-gray-400">Optional</span>
-                          </div>
-                          <Input 
-                            id="sale-start" 
-                            type="date"
-                            className="bg-card/50 border-gray-800"
-                          />
-                        </div>
-                        
-                        <div>
-                          <div className="flex justify-between mb-1">
-                            <Label htmlFor="sale-end">Sale End</Label>
-                            <span className="text-xs text-gray-400">Optional</span>
-                          </div>
-                          <Input 
-                            id="sale-end" 
-                            type="date"
+                            value={formData.ticket_max_quantity}
+                            onChange={(e) => handleInputChange('ticket_max_quantity', e.target.value)}
                             className="bg-card/50 border-gray-800"
                           />
                         </div>
@@ -525,35 +546,62 @@ const CreateEvent = () => {
                     </div>
                   </div>
 
-                  <div className="border border-dashed border-gray-700 rounded-lg p-8 text-center hover:border-gray-500 transition-colors cursor-pointer">
-                    <div className="space-y-2">
-                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                        <Plus className="h-6 w-6 text-primary" />
-                      </div>
-                      <div className="text-gray-300 font-medium">Add Another Ticket Type</div>
-                      <p className="text-gray-400 text-sm">Create VIP, early bird, or group tickets</p>
-                    </div>
-                  </div>
-                  
-                  <Separator className="bg-gray-800 my-6" />
-                  
+                  {/* Stalls Section */}
                   <div>
-                    <h3 className="text-lg font-medium mb-4">Checkout Options</h3>
-                    <div className="space-y-4">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox id="show-remaining" defaultChecked />
-                        <Label htmlFor="show-remaining">Show remaining tickets to customers</Label>
+                    <div className="flex items-center mb-4">
+                      <Badge className="mr-2">Stalls</Badge>
+                      <h3 className="text-lg font-medium">Vendor Stalls</h3>
+                    </div>
+                    
+                    <div className="space-y-4 border border-gray-800 rounded-lg p-4">
+                      <div className="flex items-center space-x-2 mb-4">
+                        <Switch 
+                          id="has_stall" 
+                          checked={formData.has_stall}
+                          onCheckedChange={(checked) => handleInputChange('has_stall', checked)}
+                        />
+                        <Label htmlFor="has_stall">Enable vendor stalls for this event</Label>
                       </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <Checkbox id="collect-info" defaultChecked />
-                        <Label htmlFor="collect-info">Collect attendee information during checkout</Label>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <Checkbox id="limit-tickets" />
-                        <Label htmlFor="limit-tickets">Limit tickets per order</Label>
-                      </div>
+
+                      {formData.has_stall && (
+                        <div className="space-y-4 pt-4 border-t border-gray-800">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <div className="flex justify-between mb-1">
+                                <Label htmlFor="stall_price">Stall Price</Label>
+                                <span className="text-xs text-gray-400">Required</span>
+                              </div>
+                              <div className="relative">
+                                <div className="absolute left-3 top-3 text-gray-400">
+                                  <DollarSign className="h-4 w-4" />
+                                </div>
+                                <Input 
+                                  id="stall_price" 
+                                  placeholder="0.00"
+                                  value={formData.stall_price}
+                                  onChange={(e) => handleInputChange('stall_price', e.target.value)}
+                                  className="bg-card/50 border-gray-800 pl-10"
+                                />
+                              </div>
+                            </div>
+                            
+                            <div>
+                              <div className="flex justify-between mb-1">
+                                <Label htmlFor="stall_max_quantity">Available Stalls</Label>
+                                <span className="text-xs text-gray-400">Required</span>
+                              </div>
+                              <Input 
+                                id="stall_max_quantity" 
+                                type="number"
+                                placeholder="Number of stalls available"
+                                value={formData.stall_max_quantity}
+                                onChange={(e) => handleInputChange('stall_max_quantity', e.target.value)}
+                                className="bg-card/50 border-gray-800"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -561,7 +609,6 @@ const CreateEvent = () => {
                 <div className="mt-10 flex justify-between">
                   <Button variant="outline" onClick={handlePrevious}>
                     <ChevronLeft className="mr-2 h-5 w-5" />
-                    Back
                   </Button>
                   <Button onClick={handleNext}>
                     Continue
@@ -595,8 +642,8 @@ const CreateEvent = () => {
                       )}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                       <div className="absolute bottom-4 left-4">
-                        <Badge className="mb-2 bg-primary hover:bg-primary">Technology</Badge>
-                        <h3 className="text-2xl font-bold text-white">Tech Conference 2023: Future of AI</h3>
+                        <Badge className="mb-2 bg-primary hover:bg-primary">{formData.category}</Badge>
+                        <h3 className="text-2xl font-bold text-white">{formData.title}</h3>
                       </div>
                     </div>
                     
@@ -609,8 +656,24 @@ const CreateEvent = () => {
                               <Calendar className="h-5 w-5 text-primary mr-3 flex-shrink-0" />
                               <div>
                                 <div className="font-medium">Date & Time</div>
-                                <div className="text-gray-400">June 15, 2023</div>
-                                <div className="text-gray-400">9:00 AM - 6:00 PM</div>
+                                <div className="text-gray-400">
+                                  {new Date(formData.start_date).toLocaleDateString('en-US', {
+                                    weekday: 'long',
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric'
+                                  })}
+                                </div>
+                                {formData.end_date && (
+                                  <div className="text-gray-400">
+                                    to {new Date(formData.end_date).toLocaleDateString('en-US', {
+                                      weekday: 'long',
+                                      year: 'numeric',
+                                      month: 'long',
+                                      day: 'numeric'
+                                    })}
+                                  </div>
+                                )}
                               </div>
                             </div>
                             
@@ -618,16 +681,7 @@ const CreateEvent = () => {
                               <MapPin className="h-5 w-5 text-primary mr-3 flex-shrink-0" />
                               <div>
                                 <div className="font-medium">Location</div>
-                                <div className="text-gray-400">San Francisco Convention Center</div>
-                                <div className="text-gray-400">747 Howard St, San Francisco, CA 94103</div>
-                              </div>
-                            </div>
-                            
-                            <div className="flex">
-                              <Users className="h-5 w-5 text-primary mr-3 flex-shrink-0" />
-                              <div>
-                                <div className="font-medium">Capacity</div>
-                                <div className="text-gray-400">100 attendees maximum</div>
+                                <div className="text-gray-400">{formData.location}</div>
                               </div>
                             </div>
                           </div>
@@ -640,18 +694,21 @@ const CreateEvent = () => {
                               <Ticket className="h-5 w-5 text-primary mr-3 flex-shrink-0" />
                               <div>
                                 <div className="font-medium">Standard Ticket</div>
-                                <div className="text-gray-400">$99.00</div>
-                                <div className="text-gray-400">100 available</div>
+                                <div className="text-gray-400">${parseFloat(formData.ticket_price).toFixed(2)}</div>
+                                <div className="text-gray-400">{formData.ticket_max_quantity} available</div>
                               </div>
                             </div>
                             
-                            <div className="flex">
-                              <Calendar className="h-5 w-5 text-primary mr-3 flex-shrink-0" />
-                              <div>
-                                <div className="font-medium">Sales Period</div>
-                                <div className="text-gray-400">Now until event date</div>
+                            {formData.has_stall && (
+                              <div className="flex">
+                                <Store className="h-5 w-5 text-primary mr-3 flex-shrink-0" />
+                                <div>
+                                  <div className="font-medium">Vendor Stalls</div>
+                                  <div className="text-gray-400">${parseFloat(formData.stall_price || '0').toFixed(2)} per stall</div>
+                                  <div className="text-gray-400">{formData.stall_max_quantity} stalls available</div>
+                                </div>
                               </div>
-                            </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -659,8 +716,8 @@ const CreateEvent = () => {
                       <Separator className="bg-gray-800 my-6" />
                       
                       <h4 className="text-lg font-medium mb-3">Event Description</h4>
-                      <p className="text-gray-300 text-sm">
-                        Join us for the most innovative tech conference of the year, focusing on the future of Artificial Intelligence and how it will shape our world. Hear from leading experts, participate in hands-on workshops, and network with professionals in the field.
+                      <p className="text-gray-300 text-sm whitespace-pre-wrap">
+                        {formData.description}
                       </p>
                     </div>
                   </div>

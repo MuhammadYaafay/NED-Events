@@ -9,16 +9,22 @@ const eventRoutes = require("./routes/event.route")
 const ticketRoutes = require("./routes/ticket.route")
 const paymentRoutes = require("./routes/payment.route");
 
-
 const app = express();
 dotenv.config();
 
-
 const port = process.env.PORT || 8800;
 
-app.use(express.json());
-app.use(cors());
+// Increase JSON limit for large payloads
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// Configure CORS
+app.use(cors({
+  origin: 'http://localhost:8080',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
 
 //Routes
 app.use("/api/auth", authRoutes);

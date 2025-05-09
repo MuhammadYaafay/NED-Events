@@ -8,11 +8,19 @@ const createEvent = async (req, res) => {
       return res.status(400).json({ message: errors.array() });
     }
 
+    // Check if the request size is too large
+    if (req.headers['content-length'] > 50 * 1024 * 1024) { // 50MB limit
+      return res.status(413).json({ 
+        message: "Image size too large. Please upload an image smaller than 50MB." 
+      });
+    }
+
     const {
       title,
       description,
       start_date,
       end_date,
+      event_time,
       category,
       location,
       image,
@@ -38,9 +46,9 @@ const createEvent = async (req, res) => {
     try {
       // Create event (without capacity)
       const [eventResult] = await connection.query(
-        `INSERT INTO events (title, description, start_date, end_date, location, organizer_id, image, category)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [title, description, start_date, end_date, location, organizerId, image || null, category]
+        `INSERT INTO events (title, description, start_date, end_date, location, organizer_id, image, category, event_time)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [title, description, start_date, end_date, location, organizerId, image || null, category, event_time]
       );
 
       const eventId = eventResult.insertId;

@@ -10,10 +10,11 @@ const {
   eventHistory
 } = require("../controller/event.controller");
 const { verifyToken, isOrganizer } = require("../middlewares/auth.middleware");
+const { validateEventCreation } = require("../middlewares/validateRequest.middleware");
 
 const router = express.Router();
 
-router.post("/create", verifyToken, isOrganizer, createEvent);
+router.post("/create", verifyToken, isOrganizer, validateEventCreation, createEvent);
 router.get("/", getAllEvents);
 router.get("/eventHistory", verifyToken, eventHistory);
 router.get("/getByOrganizer", verifyToken, isOrganizer, getAllEventsByOrganizer);

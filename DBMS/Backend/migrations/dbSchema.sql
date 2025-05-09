@@ -5,7 +5,7 @@ CREATE TABLE
         password VARCHAR(255) NOT NULL,
         name VARCHAR(100),
         role ENUM ('attendee', 'vendor', 'organizer') NOT NULL,
-        profile_image VARCHAR(255),
+        profile_image MEDIUMTEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     );
@@ -32,14 +32,13 @@ CREATE TABLE
         organizer_id INT NOT NULL,
         capacity INT,
         status ENUM ('upcoming', 'ongoing', 'completed', 'cancelled') DEFAULT 'upcoming',
-        image VARCHAR(255),
+        category VARCHAR(100) NOT NULL,
+        image MEDIUMTEXT,
         ticket_id INT,
         stall_id INT,
         has_stall BOOLEAN DEFAULT FALSE,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        -- FOREIGN KEY (stall_id) REFERENCES stalls (stall_id), -- this is not needed here bcz stall_id is not a part of events table it is a part of stalls table also it is creating a circular dependency
-        -- FOREIGN KEY (ticket_id) REFERENCES tickets (ticket_id), -- this is not needed here bcz ticket_id is not a part of events table it is a part of tickets table also it is creating a circular dependency
         FOREIGN KEY (organizer_id) REFERENCES users (user_id)
     );
 
@@ -115,7 +114,7 @@ CREATE TABLE
         name VARCHAR(100) NOT NULL,
         description TEXT,
         price DECIMAL(10, 2) NOT NULL,
-        image VARCHAR(255),
+        image MEDIUMTEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (stall_id) REFERENCES stalls (stall_id) ON DELETE CASCADE,
