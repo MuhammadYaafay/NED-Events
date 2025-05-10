@@ -6,18 +6,9 @@ CREATE TABLE
         name VARCHAR(100),
         role ENUM ('attendee', 'vendor', 'organizer') NOT NULL,
         profile_image MEDIUMTEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    );
-
-CREATE TABLE
-    user_profiles (
-        profile_id INT AUTO_INCREMENT PRIMARY KEY,
-        user_id INT NOT NULL,
         bio TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     );
 
 CREATE TABLE
@@ -40,31 +31,6 @@ CREATE TABLE
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (organizer_id) REFERENCES users (user_id)
-    );
-
-
-CREATE TABLE
-    event_categories (
-        category_id INT AUTO_INCREMENT PRIMARY KEY,
-        name VARCHAR(100) NOT NULL,
-        description TEXT created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        UNIQUE KEY (name) --this will make sure that we dont have duplicate entries for same category
-    );
-
--- MAPPING EVENTS TO CATEGORIES
---idfk whats this for lmao
---this is for many to many relationship between events and categories so that we can have multiple categories for an event and multiple events for a category
---this will be used to filter events based on categories
---this will also be used to filter events based on categories
-CREATE TABLE
-    event_category_mapping (
-        mapping_id INT AUTO_INCREMENT PRIMARY KEY,
-        event_id INT NOT NULL,
-        category_id INT NOT NULL,
-        FOREIGN KEY (event_id) REFERENCES events (event_id) ON DELETE CASCADE,
-        FOREIGN KEY (category_id) REFERENCES event_categories (category_id) ON DELETE CASCADE UNIQUE KEY (event_id, category_id) --this will make sure that we dont have duplicate entries for same event and category
-        INDEX (category_id) --this will make sure that we can filter events based on categories
     );
 
 CREATE TABLE

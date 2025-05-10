@@ -181,7 +181,7 @@ const getAllReviews = async (req, res) => {
 
     const [reviews] = await db.query(
       `SELECT 
-        u.name AS userName, u.profile_image AS userImage, er.review_id, er.comment, er.rating, er.created_at AS reviewDate
+        u.name AS userName, u.profile_image AS userImage, er.review_id, er.comment, er.rating, er.created_at
         FROM event_reviews er
         JOIN users u ON er.user_id = u.user_id
         WHERE event_id = ?
@@ -189,7 +189,7 @@ const getAllReviews = async (req, res) => {
       [event_id]
     );
     if (reviews.length > 0) {
-      return res.status(200).json({ reviews });
+      return res.status(200).json(reviews);
     } else {
       return res.status(404).json({ message: "No reviews found" });
     }

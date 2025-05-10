@@ -1,58 +1,24 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Calendar,
-  MapPin,
-  Clock,
-  Users,
-  Share2,
-  Heart,
-  MessageSquare,
-  CreditCard,
-  ArrowRight,
-  ChevronDown,
-  Plus,
-  Minus,
-  Ticket,
-  Globe,
-  Store,
-  Star,
-} from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import PageTransition from "@/components/PageTransition";
-import VendorRequestForm from "@/components/VendorRequestForm";
-import { apiRequest } from "@/utils/apiUtils";
+import { Input } from "@/components/ui/input";
+import PageTransition from '@/components/PageTransition';
+import { Calendar, MapPin, Users, Clock, Heart, Share2, Star, Send } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { apiRequest } from '@/utils/apiUtils';
+import { toast } from '@/components/ui/use-toast';
+import { getAuthToken } from '@/utils/authUtils';
 
-interface eventData {
+interface EventData {
   event_id: string;
   title: string;
   description: string;
   category: string;
   start_date: string;
+  end_date: string;
   event_time: string;
   location: string;
   booking_count: number;
@@ -65,7 +31,7 @@ interface eventData {
   featured?: boolean;
 }
 
-interface reviewsData {
+interface ReviewData {
   review_id: string;
   user_id: string;
   userName: string;
@@ -77,696 +43,404 @@ interface reviewsData {
 
 const EventDetail = () => {
   const { id } = useParams();
-  const [loading, setLoading] = useState(true);
-  const [event, setEvent] = useState<eventData | null>(null);
-  const [reviews, setReviews] = useState<reviewsData[]>([]);
   const navigate = useNavigate();
-  const [quantity, setQuantity] = useState(1);
-  const [activeTab, setActiveTab] = useState("details");
-  const { toast } = useToast();
-  const [isShareMenuOpen, setIsShareMenuOpen] = useState(false);
-  const [stallDialogOpen, setStallDialogOpen] = useState(false);
-  const { user, isAuthenticated } = useAuth();
-
+  const { isAuthenticated, user } = useAuth();
+  const [event, setEvent] = useState<EventData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [reviews, setReviews] = useState<ReviewData[]>([]);
+  const [isLiked, setIsLiked] = useState(false);
   const [userReview, setUserReview] = useState("");
   const [userRating, setUserRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
-
-  const [isLiked, setIsLiked] = useState(false);
-
-  useEffect(() => {
-    // Initialize from localStorage first for immediate UI feedback
-    const favorites = JSON.parse(localStorage.getItem('favorites'))|| {};
-    setIsLiked(favorites[id] || false);
-  
-    // Then sync with server if authenticated
-    if (isAuthenticated) {
-      const syncWithServer = async () => {
-        try {
-          const favorites = await apiRequest('/api/userEngagement/getAllFavourites', {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('NEDevents-token')}`,
-            }
-          });
-  
-          if (Array.isArray(favorites)) {
-            const serverValue = favorites.some(fav => fav.event_id === id);
-            
-            // Only update if different from current state
-            if (serverValue !== isLiked) {
-              setIsLiked(serverValue);
-              // Update localStorage to match server
-              const updatedFavorites = {...favorites, [id]: serverValue};
-              localStorage.setItem('favorites', JSON.stringify(updatedFavorites));
-            }
-          }
-        } catch (error) {
-          console.error("Failed to sync favorites:", error);
-          // Maintain current state if sync fails
-        }
-      };
-  
-      syncWithServer();
-    }
-  }, [id, isAuthenticated]); // Only re-run when these values change
+  const [quantity, setQuantity] = useState(1);
+  const [favorites, setFavorites] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const fetchEventDetails = async () => {
       try {
-        const response = (await apiRequest(`/api/event/${id}`)) as eventData;
-        setEvent(response);
+        const eventData = await apiRequest(`/api/event/${id}`) as EventData;
+        setEvent(eventData);
         setLoading(false);
       } catch (error) {
         console.error("Error fetching event details:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load event details",
+          variant: "destructive"
+        });
+      }
+    };
+
+    const fetchReviews = async () => {
+      try {
+        const response = await apiRequest(`/api/userEngagement/getAllReviews/${id}`);
+        // Ensure reviews is always an array
+        setReviews(Array.isArray(response) ? response : []);
+      } catch (error) {
+        console.error("Error fetching reviews:", error);
+        setReviews([]);
+      }
+    };
+
+    const checkFavoriteStatus = async () => {
+      if (!isAuthenticated) return;
+      try {
+        const token = getAuthToken();
+        if (!token) {
+          console.error("No authentication token found");
+          return;
+        }
+        const favorites = await apiRequest('/api/userEngagement/getAllFavourites', {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+        if (Array.isArray(favorites)) {
+          const isFavorite = favorites.some(fav => fav.event_id === id);
+          setIsLiked(isFavorite);
+        }
+      } catch (error) {
+        console.error("Error checking favorite status:", error);
       }
     };
 
     fetchEventDetails();
-  }, [id]);
-
-  useEffect(() => {
-    const fetchReviews = async () => {
-      try {
-        const response = await apiRequest<{ reviews: reviewsData[] }>(
-          `/api/userEngagement/getAllReviews/${id}`
-        );
-        setReviews(Array.isArray(response?.reviews) ? response.reviews : []);
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching reviews:", error);
-        setReviews([]);
-        setLoading(false);
-      }
-    };
     fetchReviews();
-  }, [id]);
+    checkFavoriteStatus();
+  }, [id, isAuthenticated]);
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
-
-  const handleDecrementQuantity = () => {
-    if (quantity > 1) {
-      setQuantity(quantity - 1);
+  const handleLike = async () => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
     }
-  };
 
-  const handleIncrementQuantity = () => {
-    if (quantity < 10) {
-      setQuantity(quantity + 1);
-    }
-  };
-
-  const handleb = async () => {
-    const newValue = !isLiked;
-    
     try {
-      const endpoint = newValue
-        ? `/api/userEngagement/addToFavourites/${id}`
-        : `/api/userEngagement/removeFromFavourites/${id}`;
-  
-      const response = await apiRequest(endpoint, {
-        method: newValue ? 'POST' : 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('NEDevents-token')}`
-        }
-      });
-  
-      if (response?.message) {
-        // Update both state and localStorage
-        setIsLiked(newValue);
-        const favorites = JSON.parse(localStorage.getItem('favorites') || '{}');
-        favorites[id] = newValue;
-        localStorage.setItem('favorites', JSON.stringify(favorites));
-        
-        toast({
-          title: newValue ? "Added to favorites" : "Removed from favorites",
-          description: newValue
-            ? "This event has been added to your favorites."
-            : "This event has been removed from your favorites.",
-        });
+      const token = getAuthToken();
+      if (!token) {
+        console.error("No authentication token found");
+        return;
       }
-    } catch (error) {
-      console.error("Error toggling favorite:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to update favorites. Please try again.",
-      });
-    }
-  };
 
-  
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
-    toast({
-      title: "Link copied!",
-      description: "Event link has been copied to your clipboard.",
-    });
-  };
-
-  const handleReserveTickets = () => {
-    if (!event) return;
-
-    if (event.booking_count >= event.max_quantity) {
-      toast({
-        title: "Tickets sold out",
-        description: "No tickets available for this event.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (event.booking_count + quantity > event.max_quantity) {
-      toast({
-        title: "Quantity exceeds available tickets",
-        description: `Only ${
-          event.max_quantity - event.booking_count
-        } tickets available.`,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (quantity < 1) {
-      toast({
-        title: "Invalid quantity",
-        description: "Please select at least one ticket.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const purchaseTickets = async () => {
-      try {
-        const response = await apiRequest(
-          `/api/userEngagement/purchaseTickets/${id}`,
-          {
-            method: "POST",
-            body: JSON.stringify({
-              user_id: user?.user_id,
-              event_id: id,
-              quantity: quantity,
-            }),
-            headers: { "Content-Type": "application/json" },
+      if (!isLiked) {
+        const response = await apiRequest(`/api/userEngagement/addToFavourites/${id}`, {
+          method: 'POST',
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
           }
-        );
-
+        });
         if (response) {
+          setIsLiked(true);
           toast({
-            title: "Tickets reserved",
-            description: "Your tickets have been reserved successfully.",
-          });
-
-          const totalPrice =
-            parseFloat(event.ticket_price.replace("$", "")) * quantity;
-
-          navigate("/confirm-payment", {
-            state: {
-              eventDetails: {
-                title: event.title,
-                price: event.ticket_price,
-                quantity: quantity,
-                totalPrice: totalPrice,
-              },
-            },
+            title: "Success",
+            description: "Event added to favorites"
           });
         }
-      } catch (error) {
-        console.error("Error reserving tickets:", error);
-        toast({
-          title: "Error reserving tickets",
-          description: "Please try again later.",
-          variant: "destructive",
+      } else {
+        const response = await apiRequest(`/api/userEngagement/removeFromFavourites/${id}`, {
+          method: 'DELETE',
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
         });
-      }
-    };
-
-    purchaseTickets();
-  };
-
-  const handleStallRequestClose = async () => {
-    try {
-      const response = await apiRequest(
-        `/api/userEngagement/requestStall/${id}`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            user_id: user?.user_id,
-            event_id: id,
-          }),
-          headers: { "Content-Type": "application/json" },
+        if (response) {
+          setIsLiked(false);
+          toast({
+            title: "Success",
+            description: "Event removed from favorites"
+          });
         }
-      );
-
-      if (response) {
-        toast({
-          title: "Stall request sent",
-          description: "Your request has been sent to the event organizer.",
-        });
       }
     } catch (error) {
-      console.error("Error requesting stall:", error);
+      console.error("Error updating favorite status:", error);
       toast({
-        title: "Error sending request",
-        description: "Please try again later.",
-        variant: "destructive",
+        title: "Error",
+        description: "Failed to update favorite status",
+        variant: "destructive"
       });
-      return; // Exit early if there's an error
     }
-
-    // Cleanup - only reached if request was successful
-    setUserReview("");
-    setUserRating(0);
-    setHoveredRating(0);
-    setQuantity(1);
-    setIsShareMenuOpen(false);
-    setStallDialogOpen(false);
   };
 
-  const handleSubmitReview = async () => {
-    // Validate rating
-    if (userRating === 0) {
+  const handleReviewSubmit = async () => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+
+    if (!userRating) {
       toast({
-        title: "Rating required",
-        description:
-          "Please select a star rating before submitting your review.",
-        variant: "destructive",
+        title: "Error",
+        description: "Please select a rating",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!userReview.trim()) {
+      toast({
+        title: "Error",
+        description: "Please write a review",
+        variant: "destructive"
       });
       return;
     }
 
     try {
+      const token = getAuthToken();
+      if (!token) {
+        console.error("No authentication token found");
+        return;
+      }
+
       const response = await apiRequest(`/api/userEngagement/addReview/${id}`, {
-        method: "POST",
-        body: JSON.stringify({
-          user_id: user?.user_id,
-          event_id: id,
+        method: 'POST',          
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: {
           rating: userRating,
-          comment: userReview,
-        }),
-        headers: { "Content-Type": "application/json" },
+          comment: userReview.trim()
+      }
       });
 
       if (response) {
-        toast({
-          title: "Review submitted",
-          description: "Thank you for sharing your feedback!",
-        });
-
+        // Refresh reviews
+        const updatedReviews = await apiRequest(`/api/userEngagement/getAllReviews/${id}`);
+        setReviews(Array.isArray(updatedReviews) ? updatedReviews : []);
+        
         // Reset form
         setUserReview("");
         setUserRating(0);
-        setHoveredRating(0); // Also reset hover state if you're using it
+        setHoveredRating(0);
+
+        toast({
+          title: "Success",
+          description: "Review submitted successfully"
+        });
       }
     } catch (error) {
       console.error("Error submitting review:", error);
       toast({
-        title: "Error submitting review",
-        description: "Please try again later.",
-        variant: "destructive",
+        title: "Error",
+        description: "Failed to submit review. Please try again.",
+        variant: "destructive"
       });
     }
   };
 
+  const handleBookTicket = () => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    navigate(`/confirm-payment?eventId=${id}&quantity=${quantity}`);
+  };
+
   if (loading) {
     return (
-      <div className="container mx-auto pt-24 pb-8 px-4 md:px-0">
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <PageTransition>
+        <div className="container mx-auto py-8">
+          <div className="animate-pulse">
+            {/* Loading skeleton */}
+            <div className="h-64 bg-gray-200 rounded-lg mb-4"></div>
+            <div className="h-8 bg-gray-200 rounded w-1/2 mb-4"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
+          </div>
         </div>
-      </div>
+      </PageTransition>
     );
   }
 
   if (!event) {
     return (
-      <div className="container mx-auto pt-24 pb-8 px-4 md:px-0">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold">Event not found</h2>
-          <p className="text-muted-foreground mt-2">
-            The event you're looking for doesn't exist or has been removed.
-          </p>
-          <Button className="mt-4" onClick={() => navigate("/events")}>
-            Back to Events
-          </Button>
+      <PageTransition>
+        <div className="container mx-auto py-8">
+          <p>Event not found</p>
         </div>
-      </div>
+      </PageTransition>
     );
   }
-  console.log(reviews);
-  const totalPrice = event
-    ? parseFloat(event.ticket_price.replace("$", "")) * quantity
-    : 0;
 
   return (
     <PageTransition>
-      <div className="container mx-auto pt-24 pb-8 px-4 md:px-0">
-        <button
-          onClick={() => navigate("/events")}
-          className="flex items-center text-sm mb-6 text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowRight className="mr-1 h-4 w-4 rotate-180" />
-          Back to Events
-        </button>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-6">
-            <div className="relative rounded-xl overflow-hidden aspect-video w-full">
-              <img
-                src={event.image}
+      <div className="container mx-auto py-8">
+        <Card>
+          <CardHeader>
+            <div className="relative">
+              <img 
+                src={event.image || '/placeholder.svg'} 
                 alt={event.title}
-                className="w-full h-full object-cover"
+                className="w-full h-[400px] object-cover rounded-t-lg"
               />
-              <div className="absolute top-4 left-4 flex gap-2">
-                <Badge className="bg-primary hover:bg-primary">
-                  {event.ticket_price}
-                </Badge>
-                {event.featured && (
-                  <Badge
-                    variant="outline"
-                    className="bg-black/50 backdrop-blur-sm border-primary text-primary"
-                  >
-                    Featured
-                  </Badge>
-                )}
+              <div className="absolute top-4 right-4 space-x-2">
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  onClick={handleLike}
+                  className={`rounded-full ${isLiked ? 'bg-red-100' : ''}`}
+                >
+                  <Heart className={isLiked ? 'text-red-500 fill-red-500' : ''} />
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className="rounded-full"
+                >
+                  <Share2 />
+                </Button>
               </div>
             </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <Badge variant="outline" className="text-xs font-normal">
-                  {event.category}
-                </Badge>
-                <div className="flex gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={isLiked ? "text-red-500 hover:text-red-600" : ""}
-                    onClick={handleb}
-                  >
-                    <Heart
-                      className="h-5 w-5"
-                      fill={isLiked ? "currentColor" : "none"}
-                    />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={handleShare}>
-                    <Share2 className="h-5 w-5" />
-                  </Button>
-                </div>
-              </div>
-
-              <h1 className="text-3xl font-bold mb-4">{event.title}</h1>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div className="flex items-center text-muted-foreground">
-                  <Calendar className="h-5 w-5 mr-3 text-primary" />
-                  <span>{event.start_date}</span>
-                </div>
-
-                <div className="flex items-center text-muted-foreground">
-                  <Clock className="h-5 w-5 mr-3 text-primary" />
-                  <span>{event.event_time}</span>
-                </div>
-
-                <div className="flex items-center text-muted-foreground">
-                  <MapPin className="h-5 w-5 mr-3 text-primary" />
-                  <span className="truncate">{event.location}</span>
-                </div>
-
-                <div className="flex items-center text-muted-foreground">
-                  <Users className="h-5 w-5 mr-3 text-primary" />
-                  <span>
-                    {event.booking_count} of {event.max_quantity} attending
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-3 mb-8">
-                <Avatar>
-                  <AvatarImage src={event.profile_image} alt={event.name} />
-                  <AvatarFallback>{event.name.charAt(0)}</AvatarFallback>
-                </Avatar>
+            <div className="space-y-4 mt-6">
+              <div className="flex justify-between items-start">
                 <div>
-                  <p className="text-sm text-muted-foreground">Organized by</p>
-                  <p className="font-medium">{event.name}</p>
+                  <CardTitle className="text-3xl mb-2">{event.title}</CardTitle>
+                  <div className="flex items-center space-x-4 text-gray-500">
+                    <div className="flex items-center">
+                      <Calendar className="w-4 h-4 mr-1" />
+                      <span>{new Date(event.start_date).toLocaleDateString()}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Clock className="w-4 h-4 mr-1" />
+                      <span>{event.event_time}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <MapPin className="w-4 h-4 mr-1" />
+                      <span>{event.location}</span>
+                    </div>
+                  </div>
                 </div>
+                <Badge variant="secondary">{event.category}</Badge>
               </div>
             </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid md:grid-cols-3 gap-8">
+              <div className="md:col-span-2 space-y-6">
+                <div>
+                  <h3 className="text-xl font-semibold mb-2">About this Event</h3>
+                  <p className="text-gray-600">{event.description}</p>
+                </div>
 
-            <Tabs
-              defaultValue="details"
-              onValueChange={setActiveTab}
-              className="w-full"
-            >
-              <TabsList className="grid grid-cols-2 w-full">
-                <TabsTrigger value="details">Overview</TabsTrigger>
-                <TabsTrigger value="reviews">Reviews</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="details" className="mt-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>About This Event</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground whitespace-pre-line">
-                      {event.description}
-                    </p>
-
-                    <div className="mt-6">
-                      <h3 className="text-lg font-semibold mb-3">
-                        Event Details
-                      </h3>
-                      <div className="grid grid-cols-1 gap-3">
-                        <div className="flex items-center">
-                          <Globe className="h-5 w-5 mr-2 text-primary" />
-                          <span>Language: English</span>
-                        </div>
-                        <div className="flex items-center">
-                          <Users className="h-5 w-5 mr-2 text-primary" />
-                          <span>Capacity: {event.max_quantity} attendees</span>
-                        </div>
+                <div>
+                  <h3 className="text-xl font-semibold mb-4">Reviews</h3>
+                  {isAuthenticated && (
+                    <div className="mb-6 space-y-4">
+                      <div className="flex space-x-2">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            className={`cursor-pointer ${
+                              star <= (hoveredRating || userRating)
+                                ? 'text-yellow-400 fill-yellow-400'
+                                : 'text-gray-300'
+                            }`}
+                            onMouseEnter={() => setHoveredRating(star)}
+                            onMouseLeave={() => setHoveredRating(0)}
+                            onClick={() => setUserRating(star)}
+                          />
+                        ))}
                       </div>
+                      <Textarea
+                        placeholder="Write your review..."
+                        value={userReview}
+                        onChange={(e) => setUserReview(e.target.value)}
+                      />
+                      <Button onClick={handleReviewSubmit}>
+                        Submit Review
+                        <Send className="w-4 h-4 ml-2" />
+                      </Button>
                     </div>
-
-                    <div className="mt-6">
-                      <h3 className="text-lg font-semibold mb-3">
-                        Event Location
-                      </h3>
-                      <p className="text-muted-foreground">{event.location}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="reviews" className="mt-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Reviews</CardTitle>
-                    <CardDescription>
-                      What attendees are saying about this event
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {isAuthenticated && (
-                      <div className="mb-6 border-b pb-6">
-                        <h3 className="text-lg font-medium mb-3">
-                          Write a Review
-                        </h3>
-                        <div className="flex mb-3">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <button
-                              key={star}
-                              type="button"
-                              className="p-1"
-                              onClick={() => setUserRating(star)}
-                              onMouseEnter={() => setHoveredRating(star)}
-                              onMouseLeave={() => setHoveredRating(0)}
-                            >
-                              <Star
-                                className="h-6 w-6"
-                                fill={
-                                  (hoveredRating || userRating) >= star
-                                    ? "gold"
-                                    : "none"
-                                }
-                                color={
-                                  (hoveredRating || userRating) >= star
-                                    ? "gold"
-                                    : "currentColor"
-                                }
-                              />
-                            </button>
-                          ))}
-                          <span className="ml-2 text-sm self-center text-muted-foreground">
-                            {userRating > 0
-                              ? `${userRating} star${
-                                  userRating !== 1 ? "s" : ""
-                                }`
-                              : "Select rating"}
-                          </span>
-                        </div>
-                        <Textarea
-                          placeholder="Share your experience at this event..."
-                          className="mb-3"
-                          value={userReview}
-                          onChange={(e) => setUserReview(e.target.value)}
-                        />
-                        <Button onClick={handleSubmitReview}>
-                          Submit Review
-                        </Button>
-                      </div>
-                    )}
-
-                    <div className="space-y-4">
-                      {reviews.map((review) => (
-                        <div
-                          key={review.review_id}
-                          className="pb-4 border-b last:border-0"
-                        >
-                          <div className="flex items-center mb-2">
-                            <Avatar className="h-8 w-8 mr-2">
-                              <AvatarImage
-                                src={review.userImage}
-                                alt={review.userName}
-                              />
-                              <AvatarFallback>
-                                {review.userName.charAt(0)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-medium text-sm">
-                                {review.userName}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {review.created_at}
-                              </p>
+                  )}
+                  <div className="space-y-4">
+                    {reviews.map((review) => (
+                      <Card key={review.review_id}>
+                        <CardContent className="pt-4">
+                          <div className="flex items-start space-x-4">
+                            <img
+                              src={review.userImage || '/placeholder.svg'}
+                              alt={review.userName}
+                              className="w-10 h-10 rounded-full"
+                            />
+                            <div className="flex-1">
+                              <div className="flex justify-between items-center mb-2">
+                                <h4 className="font-semibold">{review.userName}</h4>
+                                <div className="flex">
+                                  {Array.from({ length: review.rating }).map((_, i) => (
+                                    <Star
+                                      key={i}
+                                      className="w-4 h-4 text-yellow-400 fill-yellow-400"
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                              <p className="text-gray-600">{review.comment}</p>
+                              <span className="text-sm text-gray-400 mt-2">
+                                {new Date(review.created_at).toLocaleDateString()}
+                              </span>
                             </div>
                           </div>
-                          <div className="flex items-center mb-2">
-                            {Array.from({ length: 5 }).map((_, i) => (
-                              <Star
-                                key={i}
-                                className="w-4 h-4"
-                                fill={i < review.rating ? "gold" : "none"}
-                                color={i < review.rating ? "gold" : "gray"}
-                              />
-                            ))}
-                          </div>
-                          <p className="text-sm">{review.comment}</p>
-                        </div>
-                      ))}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-2xl font-bold">${event.ticket_price}</p>
+                        <p className="text-sm text-gray-500">per ticket</p>
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        <Input
+                          type="number"
+                          min="1"
+                          max={event.max_quantity}
+                          value={quantity}
+                          onChange={(e) => setQuantity(parseInt(e.target.value))}
+                          className="w-20"
+                        />
+                        <span className="text-sm text-gray-500">
+                          {event.max_quantity} tickets remaining
+                        </span>
+                      </div>
+                      <Button 
+                        className="w-full" 
+                        onClick={handleBookTicket}
+                        disabled={event.max_quantity === 0}
+                      >
+                        {event.max_quantity === 0 ? 'Sold Out' : 'Book Tickets'}
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
-              </TabsContent>
-            </Tabs>
-          </div>
 
-          <div className="lg:col-span-1">
-            <Card className="sticky top-6">
-              <CardHeader>
-                <CardTitle>Get Tickets</CardTitle>
-                <CardDescription>
-                  Secure your spot at this event
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <Ticket className="h-5 w-5 mr-2 text-primary" />
-                    <span>Standard Ticket</span>
-                  </div>
-                  <span className="font-semibold">{event.ticket_price}</span>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">Quantity</p>
-                  <div className="flex items-center border rounded-md">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="rounded-r-none"
-                      onClick={handleDecrementQuantity}
-                      disabled={quantity <= 1}
-                    >
-                      <Minus className="h-4 w-4" />
-                    </Button>
-                    <div className="flex-1 text-center">{quantity}</div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="rounded-l-none"
-                      onClick={handleIncrementQuantity}
-                      disabled={quantity >= 10}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="bg-muted p-4 rounded-md">
-                  <div className="flex justify-between mb-2">
-                    <span>
-                      Price ({quantity} ticket{quantity > 1 ? "s" : ""})
-                    </span>
-                    <span>
-                      $
-                      {(
-                        parseFloat(event.ticket_price.replace("$", "")) *
-                        quantity
-                      ).toFixed(2)}
-                    </span>
-                  </div>
-                  <Separator className="my-2" />
-                  <div className="flex justify-between font-semibold">
-                    <span>Total</span>
-                    <span>${totalPrice.toFixed(2)}</span>
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter className="flex flex-col space-y-2">
-                <Button
-                  className="w-full"
-                  size="lg"
-                  onClick={handleReserveTickets}
-                >
-                  Reserve Tickets
-                </Button>
-
-                {isAuthenticated && user?.role === "vendor" && (
-                  <Dialog
-                    open={stallDialogOpen}
-                    onOpenChange={setStallDialogOpen}
-                  >
-                    <DialogTrigger asChild>
-                      <Button variant="outline" className="w-full" size="lg">
-                        <Store className="mr-2 h-4 w-4" />
-                        Book Stall
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-md">
-                      <VendorRequestForm
-                        eventId={event.event_id}
-                        eventName={event.title}
-                        onClose={handleStallRequestClose}
+                <Card className="mt-4">
+                  <CardContent className="pt-6">
+                    <h3 className="font-semibold mb-4">Organizer</h3>
+                    <div className="flex items-center space-x-4">
+                      <img
+                        src={event.profile_image || '/placeholder.svg'}
+                        alt={event.name}
+                        className="w-12 h-12 rounded-full"
                       />
-                    </DialogContent>
-                  </Dialog>
-                )}
-
-                <p className="text-xs text-center text-muted-foreground">
-                  Only {event.max_quantity - event.booking_count} spots
-                  remaining
-                </p>
-              </CardFooter>
-            </Card>
-          </div>
-        </div>
+                      <div>
+                        <p className="font-medium">{event.name}</p>
+                        <p className="text-sm text-gray-500">Event Organizer</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </PageTransition>
   );
