@@ -238,6 +238,7 @@ const getEventById = async (req, res) => {
         t.ticket_id,
         t.price AS ticket_price,
         COALESCE(COUNT(tp.purchase_id), 0) AS booking_count,
+        t.max_quantity - COALESCE(SUM(tp.quantity), 0) AS tickets_remaining,
         s.stall_id,
         s.price AS stall_price,
         CASE WHEN s.stall_id IS NOT NULL THEN 1 ELSE 0 END AS has_stall,
@@ -401,7 +402,7 @@ const getAllEventsByOrganizer = async (req, res) => {
         e.status,
         COUNT(DISTINCT tp.user_id) AS total_attendees
       FROM events e
-LEFT JOIN tickets t ON t.event_id = e.event_id
+      LEFT JOIN tickets t ON t.event_id = e.event_id
       LEFT JOIN ticket_purchases tp ON tp.ticket_id = t.ticket_id
       WHERE e.organizer_id = ?
       GROUP BY e.event_id, e.title, e.start_date, e.status

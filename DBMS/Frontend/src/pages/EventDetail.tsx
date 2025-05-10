@@ -31,6 +31,7 @@ interface EventData {
   event_time: string;
   location: string;
   booking_count: number;
+  tickets_remaining: number;
   max_quantity: number;
   image: string;
   ticket_price: string;
@@ -459,7 +460,7 @@ const EventDetail = () => {
                           className="w-20"
                         />
                         <span className="text-sm text-gray-500">
-                          {event.max_quantity} tickets remaining
+                          {event.tickets_remaining} tickets remaining
                         </span>
                       </div>
                       <Button
