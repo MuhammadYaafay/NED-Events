@@ -121,9 +121,23 @@ const getAllEvents = async (req, res) => {
         e.created_at,
         e.updated_at,
         t.ticket_id,
-        t.price AS ticket_price
+        t.price AS ticket_price,
+        COALESCE(COUNT(tp.purchase_id), 0) AS booking_count
       FROM events e
       JOIN tickets t ON t.event_id = e.event_id
+      LEFT JOIN ticket_purchases tp ON tp.ticket_id = t.ticket_id
+      GROUP BY 
+        e.event_id,
+        e.title,
+        e.description,
+        e.start_date,
+        e.end_date,
+        e.location,
+        e.organizer_id,
+        t.max_quantity,
+        e.status,
+        e.image,
+        t.price
       `
     );
 
