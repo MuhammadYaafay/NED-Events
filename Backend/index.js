@@ -26,6 +26,13 @@ app.use(cors({
   credentials: true
 }));
 
+// Middleware to handle CORS preflight requests
+app.options("/api/event", (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "https://ned-event-adils-projects-bcd5cacf.vercel.app");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.status(200).end();
+});
 //Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes); 
