@@ -236,7 +236,19 @@ const EventDetail = () => {
       navigate('/login');
       return;
     }
-    navigate(`/confirm-payment?eventId=${id}&quantity=${quantity}`);
+    // Pass event details and quantity via navigation state
+    navigate('/confirm-payment', {
+      state: {
+        eventDetails: {
+          id: event.event_id,
+          title: event.title,
+          price: Number(event.ticket_price),
+          quantity,
+          totalPrice: Number(event.ticket_price) * quantity,
+          serviceFee: 0, // You can calculate/add service fee if needed
+        }
+      }
+    });
   };
 
   if (loading) {

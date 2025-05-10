@@ -4,7 +4,7 @@ const db = require("../config/dbConnection");
 //to show user ticket price for event when "buy ticket" is clicked
 const getTicketDetails = async (req, res) => {
   try {
-    const eventId = parseInt(req.params.eventid);
+    const eventId = parseInt(req.params.id);
 
     if (!eventId) {
       return res.status(400).json({ message: "Missing event ID" });
@@ -241,9 +241,61 @@ const getTicketsForEvent = async (req, res) => {
   }
 };
 
+// Get receipt details for a ticket purchase
+const getReceiptDetails = async (req, res) => {
+  try {
+    // User ID is taken from the token, purchaseId from URL params
+    const userId = req.user.id;
+    const purchaseId = parseInt(req.params.id);
+
+    // Fetch purchase, event, ticket, and payment info
+    const [rows] = await db.query(
+      `
+      SELECT 
+        tp.purchase_id AS id, -- Updated alias here
+        tp.quantity,
+        tp.purchase_date,
+        tp.status,
+        t.ticket_id,
+        t.event_id,
+        e.title AS event_name,
+        e.start_date AS event_date,
+        e.location,
+        t.price AS ticket_price,
+        p.payment_id,
+        p.amount,
+        p.payment_method,
+        p.payment_date,
+        p.status AS payment_status,
+        p.receipt_url
+      FROM ticket_purchases tp
+      JOIN tickets t ON tp.ticket_id = t.ticket_id
+      JOIN events e ON t.event_id = e.event_id
+      LEFT JOIN ticket_payments tpmt ON tp.purchase_id = tpmt.ticket_purchase_id
+      LEFT JOIN payments p ON tpmt.payment_id = p.payment_id
+      WHERE tp.purchase_id = ? AND tp.user_id = ?
+      `,
+      [purchaseId, userId]
+    );
+
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ message: "Receipt not found" });
+    }
+
+    // Return the receipt details
+    res.status(200).json({ receipt: rows[0] });
+
+  } catch (error) {
+    console.error("Error fetching receipt details:", error);
+    res.status(500).json({ message: "Failed to fetch receipt details" });
+  }
+};
+
+
 module.exports = {
   getTicketDetails,
   purchaseTicket,
   getTicketsForUser,
   getTicketsForEvent,
+  getReceiptDetails,
 };

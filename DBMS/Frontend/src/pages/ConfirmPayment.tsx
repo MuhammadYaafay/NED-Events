@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +10,38 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { CreditCard, CheckCircle2, ArrowRight, Calendar, Loader2 } from 'lucide-react';
 import PageTransition from '@/components/PageTransition';
+import { apiRequest } from '@/utils/apiUtils';
+
+interface PurchaseResponse {
+  message: string;
+  purchaseId: number;
+  paymentId: number;
+  eventId: number;
+  ticketId: number;
+  quantity: number;
+  totalAmount: number;
+  remainingTickets: number;
+}
+
+interface EventDetails {
+  id: number;
+  title: string;
+  price: number;
+  quantity: number;
+  totalPrice: number;
+  serviceFee?: number;
+  stallBooking?: {
+    status: string;
+    price: number;
+  };
+}
+
+interface CardDetails {
+  cardNumber: string;
+  cardName: string;
+  expiryDate: string;
+  cvv: string;
+}
 
 const ConfirmPayment = () => {
   const navigate = useNavigate();
@@ -17,45 +49,126 @@ const ConfirmPayment = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("credit-card");
-  
-  // Ensure eventDetails has default values if missing from location state
-  const eventDetails = location.state?.eventDetails || {
-    title: "Event Title",
-    price: "$299",
-    quantity: 1,
-    totalPrice: 299,
-    stallBooking: null
-  };
+  const [eventDetails, setEventDetails] = useState<EventDetails | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [saveCard, setSaveCard] = useState(false);
+  const [cardDetails, setCardDetails] = useState<CardDetails>({
+    cardNumber: '',
+    cardName: '',
+    expiryDate: '',
+    cvv: ''
+  });
+
+  useEffect(() => {
+    const state = location.state;
+    if (!state?.eventDetails) {
+      navigate('/events');
+      toast({
+        title: "Error",
+        description: "No event details found",
+        variant: "destructive",
+      });
+      return;
+    }
+    setEventDetails(state.eventDetails);
+  }, [location.state, navigate, toast]);
+
+  if (!eventDetails) return null;
 
   // Calculate the total price safely
-  const calculatedTotalPrice = typeof eventDetails.totalPrice === 'number' ? eventDetails.totalPrice : 299;
-  const calculatedServiceFee = typeof eventDetails.serviceFee === 'number' ? eventDetails.serviceFee : 0;
-  const stallPrice = eventDetails.stallBooking && eventDetails.stallBooking.status !== 'pending' 
-    ? (typeof eventDetails.stallBooking.price === 'number' ? eventDetails.stallBooking.price : 0) 
+  const calculatedTotalPrice = eventDetails.totalPrice || 0;
+  const calculatedServiceFee = eventDetails.serviceFee || 0;
+  const stallPrice = eventDetails.stallBooking?.status !== 'pending' 
+    ? (eventDetails.stallBooking?.price || 0)
     : 0;
   const calculatedTotal = calculatedTotalPrice + calculatedServiceFee + stallPrice;
 
-  const handlePayment = () => {
-    setLoading(true);
+  const validateCardDetails = (): boolean => {
+    if (paymentMethod !== 'credit-card') return true;
     
-    // Simulate payment processing
-    setTimeout(() => {
+    if (!cardDetails.cardNumber.match(/^\d{16}$/)) {
+      setError('Invalid card number');
+      return false;
+    }
+    if (!cardDetails.cardName.trim()) {
+      setError('Card name is required');
+      return false;
+    }
+    if (!cardDetails.expiryDate.match(/^(0[1-9]|1[0-2])\/([0-9]{2})$/)) {
+      setError('Invalid expiry date (MM/YY)');
+      return false;
+    }
+    if (!cardDetails.cvv.match(/^\d{3,4}$/)) {
+      setError('Invalid CVV');
+      return false;
+    }
+    return true;
+  };
+
+  const handleCardInputChange = (field: keyof CardDetails) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCardDetails(prev => ({
+      ...prev,
+      [field]: e.target.value
+    }));
+    setError(null);
+  };
+
+  const handlePayment = async () => {
+    setLoading(true);
+    setError(null);
+
+    if (!validateCardDetails()) {
       setLoading(false);
-      
+      return;
+    }
+
+    try {
+      const response = await apiRequest<PurchaseResponse>(
+        `/api/ticket/purchaseTicket/${eventDetails.id}`,
+        {
+          method: 'POST',
+          body: {
+            quantity: eventDetails.quantity,
+            paymentMethod,
+            ...(paymentMethod === 'credit-card' && {
+              cardDetails: {
+                ...cardDetails,
+                saveCard
+              }
+            })
+          },
+          authenticated: true
+        }
+      );
+
       toast({
         title: "Payment Successful!",
         description: `Your tickets for ${eventDetails.title} have been confirmed.`,
         variant: "default",
       });
-      
-      navigate('/profile', { state: { paymentSuccess: true } });
-    }, 2000);
+
+      navigate('/profile', { 
+        state: { 
+          paymentSuccess: true,
+          purchaseDetails: response
+        } 
+      });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to process payment';
+      setError(errorMessage);
+      toast({
+        title: "Payment Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <PageTransition>
       <div className="container mx-auto py-8 px-4 md:px-6 mt-6">
-        {/* Back button */}
         <button 
           onClick={() => navigate(-1)} 
           className="flex items-center text-sm mb-6 text-muted-foreground hover:text-foreground transition-colors"
@@ -67,7 +180,6 @@ const ConfirmPayment = () => {
         <h1 className="text-3xl font-bold mb-8">Confirm Payment</h1>
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Payment form */}
           <div className="lg:col-span-2 space-y-6">
             <Card>
               <CardHeader>
@@ -96,7 +208,6 @@ const ConfirmPayment = () => {
                       <div className="flex items-center gap-3">
                         <span className="text-primary font-bold">Pay</span>
                         <span className="text-primary-foreground bg-primary px-1 font-bold">Pal</span>
-                        <span>PayPal</span>
                       </div>
                     </Label>
                   </div>
@@ -107,74 +218,67 @@ const ConfirmPayment = () => {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="col-span-2">
                         <Label htmlFor="cardName">Name on Card</Label>
-                        <Input id="cardName" placeholder="John Smith" className="mt-1" />
+                        <Input 
+                          id="cardName" 
+                          value={cardDetails.cardName}
+                          onChange={handleCardInputChange('cardName')}
+                          placeholder="John Smith" 
+                          className="mt-1" 
+                        />
                       </div>
                       
                       <div className="col-span-2">
                         <Label htmlFor="cardNumber">Card Number</Label>
-                        <Input id="cardNumber" placeholder="1234 5678 9012 3456" className="mt-1" />
+                        <Input 
+                          id="cardNumber" 
+                          value={cardDetails.cardNumber}
+                          onChange={handleCardInputChange('cardNumber')}
+                          placeholder="1234 5678 9012 3456" 
+                          className="mt-1"
+                        />
                       </div>
                       
                       <div>
                         <Label htmlFor="expiryDate">Expiry Date</Label>
                         <div className="relative mt-1">
-                          <Input id="expiryDate" placeholder="MM/YY" />
+                          <Input 
+                            id="expiryDate" 
+                            value={cardDetails.expiryDate}
+                            onChange={handleCardInputChange('expiryDate')}
+                            placeholder="MM/YY" 
+                          />
                           <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         </div>
                       </div>
                       
                       <div>
                         <Label htmlFor="cvv">Security Code (CVV)</Label>
-                        <Input id="cvv" placeholder="123" className="mt-1" />
+                        <Input 
+                          id="cvv" 
+                          value={cardDetails.cvv}
+                          onChange={handleCardInputChange('cvv')}
+                          placeholder="123" 
+                          className="mt-1" 
+                          type="password"
+                          maxLength={4}
+                        />
                       </div>
                     </div>
                     
                     <div className="flex items-center space-x-2 pt-2">
-                      <Checkbox id="saveCard" />
+                      <Checkbox 
+                        id="saveCard" 
+                        checked={saveCard}
+                        onCheckedChange={(checked) => setSaveCard(checked as boolean)}
+                      />
                       <Label htmlFor="saveCard">Save card for future payments</Label>
                     </div>
                   </div>
                 )}
               </CardContent>
             </Card>
-            {/* we dont need this part */}
-            {/* <Card>
-              <CardHeader>
-                <CardTitle>Billing Address</CardTitle>
-                <CardDescription>Enter your billing address</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="col-span-2">
-                    <Label htmlFor="address">Address</Label>
-                    <Input id="address" placeholder="123 Main St" className="mt-1" />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="city">City</Label>
-                    <Input id="city" placeholder="San Francisco" className="mt-1" />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="zipCode">Zip Code</Label>
-                    <Input id="zipCode" placeholder="94105" className="mt-1" />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="state">State</Label>
-                    <Input id="state" placeholder="California" className="mt-1" />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="country">Country</Label>
-                    <Input id="country" placeholder="United States" className="mt-1" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card> */}
           </div>
           
-          {/* Order summary */}
           <div className="lg:col-span-1">
             <Card className="sticky top-6">
               <CardHeader>
@@ -212,6 +316,7 @@ const ConfirmPayment = () => {
                   )}
                   
                   <Separator className="my-2" />
+                  
                   <div className="flex justify-between font-semibold">
                     <span>Total</span>
                     <span>${calculatedTotal.toFixed(2)}</span>
@@ -229,6 +334,11 @@ const ConfirmPayment = () => {
                 </div>
               </CardContent>
               <CardFooter className="flex flex-col space-y-2">
+                {error && (
+                  <div className="text-sm text-destructive mb-2">
+                    {error}
+                  </div>
+                )}
                 <Button 
                   className="w-full" 
                   size="lg" 
