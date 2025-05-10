@@ -137,8 +137,8 @@ const ConfirmPayment = () => {
                 )}
               </CardContent>
             </Card>
-            
-            <Card>
+            {/* we dont need this part */}
+            {/* <Card>
               <CardHeader>
                 <CardTitle>Billing Address</CardTitle>
                 <CardDescription>Enter your billing address</CardDescription>
@@ -171,7 +171,7 @@ const ConfirmPayment = () => {
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </Card> */}
           </div>
           
           {/* Order summary */}
