@@ -78,6 +78,7 @@ const EventDetail = () => {
           description: "Failed to load event details",
           variant: "destructive",
         });
+        setLoading(false);
       }
     };
 
@@ -94,14 +95,12 @@ const EventDetail = () => {
       }
     };
 
+    // Only check favorite status if user is authenticated
     const checkFavoriteStatus = async () => {
       if (!isAuthenticated) return;
       try {
         const token = getAuthToken();
-        if (!token) {
-          console.error("No authentication token found");
-          return;
-        }
+        if (!token) return;
         const favorites = await apiRequest(
           "/api/userEngagement/getAllFavourites",
           {
@@ -121,13 +120,23 @@ const EventDetail = () => {
       }
     };
 
+    // Always fetch event details and reviews
     fetchEventDetails();
     fetchReviews();
-    checkFavoriteStatus();
+
+    // Only check favorites if authenticated
+    if (isAuthenticated) {
+      checkFavoriteStatus();
+    }
   }, [id, isAuthenticated]);
 
   const handleLike = async () => {
     if (!isAuthenticated) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to add this event to your favorites",
+        variant: "default"
+      });
       navigate("/login");
       return;
     }
@@ -188,6 +197,11 @@ const EventDetail = () => {
 
   const handleReviewSubmit = async () => {
     if (!isAuthenticated) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to submit a review",
+        variant: "default"
+      });
       navigate("/login");
       return;
     }
@@ -258,6 +272,11 @@ const EventDetail = () => {
 
   const handleBookTicket = () => {
     if (!isAuthenticated) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to book tickets for this event",
+        variant: "default"
+      });
       navigate("/login");
       return;
     }
@@ -312,25 +331,27 @@ const EventDetail = () => {
                 alt={event.title}
                 className="w-full h-[400px] object-cover rounded-t-lg"
               />
-              <div className="absolute top-4 right-4 space-x-2">
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  onClick={handleLike}
-                  className={`rounded-full ${isLiked ? "bg-red-100" : ""}`}
-                >
-                  <Heart
-                    className={isLiked ? "text-red-500 fill-red-500" : ""}
-                  />
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className="rounded-full"
-                >
-                  <Share2 />
-                </Button>
-              </div>
+              {isAuthenticated && (
+                <div className="absolute top-4 right-4 space-x-2">
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    onClick={handleLike}
+                    className={`rounded-full ${isLiked ? "bg-red-100" : ""}`}
+                  >
+                    <Heart
+                      className={isLiked ? "text-red-500 fill-red-500" : ""}
+                    />
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="rounded-full"
+                  >
+                    <Share2 />
+                  </Button>
+                </div>
+              )}
             </div>
             <div className="space-y-4 mt-6">
               <div className="flex justify-between items-start">
@@ -369,7 +390,7 @@ const EventDetail = () => {
 
                 <div>
                   <h3 className="text-xl font-semibold mb-4">Reviews</h3>
-                  {isAuthenticated && (
+                  {isAuthenticated ? (
                     <div className="mb-6 space-y-4">
                       <div className="flex space-x-2">
                         {[1, 2, 3, 4, 5].map((star) => (
@@ -395,6 +416,15 @@ const EventDetail = () => {
                         Submit Review
                         <Send className="w-4 h-4 ml-2" />
                       </Button>
+                    </div>
+                  ) : (
+                    <div className="mb-6">
+                      <p className="text-muted-foreground">
+                        <Button variant="link" className="px-0" onClick={() => navigate('/login')}>
+                          Log in
+                        </Button>
+                        {" "}to leave a review
+                      </p>
                     </div>
                   )}
                   <div className="space-y-4">
@@ -452,7 +482,7 @@ const EventDetail = () => {
                         <Input
                           type="number"
                           min="1"
-                          max={event.max_quantity}
+                          max={event.tickets_remaining}
                           value={quantity}
                           onChange={(e) =>
                             setQuantity(parseInt(e.target.value))
@@ -465,12 +495,26 @@ const EventDetail = () => {
                       </div>
                       <Button
                         className="w-full"
-                        onClick={handleBookTicket}
-                        disabled={event.max_quantity === 0}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (!isAuthenticated) {
+                            toast({
+                              title: "Authentication Required",
+                              description: "Please log in to book tickets for this event",
+                              variant: "default"
+                            });
+                            navigate("/login");
+                            return;
+                          }
+                          handleBookTicket();
+                        }}
+                        disabled={event.tickets_remaining === 0}
                       >
-                        {event.max_quantity === 0 ? "Sold Out" : "Book Tickets"}
+                        {event.tickets_remaining === 0 
+                          ? "Sold Out" 
+                          : (isAuthenticated ? "Book Tickets" : "Login to Book")}
                       </Button>
-                      {user.role === "vendor" && (
+                      {isAuthenticated && user?.role === "vendor" && (
                         <Button
                           onClick={() =>
                             navigate(`/book-stall?eventId=${event.event_id}`)
