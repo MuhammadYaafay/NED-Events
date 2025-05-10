@@ -96,7 +96,7 @@ const EventDetail = () => {
           }
         });
         if (Array.isArray(favorites)) {
-          const isFavorite = favorites.some(fav => fav.event_id === id);
+          const isFavorite = favorites.some(fav => String(fav.event_id) === String(id));
           setIsLiked(isFavorite);
         }
       } catch (error) {
