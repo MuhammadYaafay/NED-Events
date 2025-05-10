@@ -361,11 +361,13 @@ const eventHistory = async (req, res) => {
         e.event_id,
         e.title,
         e.start_date,
+        tp.purchase_id,
         tp.status AS purchase_status
       FROM ticket_purchases tp
       JOIN tickets t ON tp.ticket_id = t.ticket_id
       JOIN events e ON t.event_id = e.event_id
       WHERE tp.user_id = ?
+      ORDER BY tp.purchase_date DESC
       `,
       [userId]
     );

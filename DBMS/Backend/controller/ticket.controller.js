@@ -244,15 +244,35 @@ const getTicketsForEvent = async (req, res) => {
 // Get receipt details for a ticket purchase
 const getReceiptDetails = async (req, res) => {
   try {
-    // User ID is taken from the token, purchaseId from URL params
     const userId = req.user.id;
     const purchaseId = parseInt(req.params.id);
 
-    // Fetch purchase, event, ticket, and payment info
+    if (!userId || !purchaseId) {
+      return res.status(400).json({ message: "Invalid request parameters" });
+    }
+
+    // First check if the purchase exists at all
+    const [purchaseExists] = await db.query(
+      `SELECT purchase_id, user_id FROM ticket_purchases WHERE purchase_id = ?`,
+      [purchaseId]
+    );
+
+    if (!purchaseExists || purchaseExists.length === 0) {
+      return res.status(404).json({ message: "Receipt not found - Purchase does not exist" });
+    }
+
+    // Then check if it belongs to the user
+    if (purchaseExists[0].user_id !== userId) {
+      return res.status(403).json({ 
+        message: "Access denied - This receipt does not belong to you"
+      });
+    }
+
+    // Now fetch the full receipt details
     const [rows] = await db.query(
       `
       SELECT 
-        tp.purchase_id AS id, -- Updated alias here
+        tp.purchase_id AS id,
         tp.quantity,
         tp.purchase_date,
         tp.status,
@@ -261,36 +281,53 @@ const getReceiptDetails = async (req, res) => {
         e.title AS event_name,
         e.start_date AS event_date,
         e.location,
-        t.price AS ticket_price,
+        CAST(t.price AS DECIMAL(10,2)) AS ticket_price,
         p.payment_id,
-        p.amount,
-        p.payment_method,
+        CAST(COALESCE(p.amount, t.price * tp.quantity) AS DECIMAL(10,2)) as amount,
+        COALESCE(p.payment_method, 'Card') as payment_method,
         p.payment_date,
-        p.status AS payment_status,
+        COALESCE(p.status, 'completed') as payment_status,
         p.receipt_url
       FROM ticket_purchases tp
-      JOIN tickets t ON tp.ticket_id = t.ticket_id
-      JOIN events e ON t.event_id = e.event_id
+      INNER JOIN tickets t ON tp.ticket_id = t.ticket_id
+      INNER JOIN events e ON t.event_id = e.event_id
       LEFT JOIN ticket_payments tpmt ON tp.purchase_id = tpmt.ticket_purchase_id
       LEFT JOIN payments p ON tpmt.payment_id = p.payment_id
-      WHERE tp.purchase_id = ? AND tp.user_id = ?
+      WHERE tp.purchase_id = ?
+      LIMIT 1
       `,
-      [purchaseId, userId]
+      [purchaseId]
     );
 
     if (!rows || rows.length === 0) {
-      return res.status(404).json({ message: "Receipt not found" });
+      return res.status(404).json({ message: "Receipt details not found" });
     }
 
     // Return the receipt details
-    res.status(200).json({ receipt: rows[0] });
+    const receipt = {
+      id: rows[0].id,
+      event_id: rows[0].event_id,
+      event_name: rows[0].event_name,
+      event_date: rows[0].event_date,
+      location: rows[0].location,
+      purchase_date: rows[0].purchase_date,
+      payment_method: rows[0].payment_method,
+      payment_status: rows[0].payment_status,
+      quantity: rows[0].quantity,
+      ticket_price: Number(rows[0].ticket_price).toFixed(2),
+      amount: Number(rows[0].amount).toFixed(2)
+    };
+
+    res.status(200).json({ receipt });
 
   } catch (error) {
     console.error("Error fetching receipt details:", error);
-    res.status(500).json({ message: "Failed to fetch receipt details" });
+    res.status(500).json({ 
+      message: "Failed to fetch receipt details",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined 
+    });
   }
 };
-
 
 module.exports = {
   getTicketDetails,

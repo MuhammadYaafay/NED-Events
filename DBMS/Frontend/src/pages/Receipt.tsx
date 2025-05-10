@@ -8,38 +8,69 @@ import PageTransition from '@/components/PageTransition';
 import { apiRequest } from '@/utils/apiUtils';
 import { toast } from "@/components/ui/use-toast";
 
+interface ReceiptData {
+  id: string | number;
+  event_id: string | number;
+  event_name: string;
+  event_date: string;
+  location: string;
+  purchase_date: string;
+  payment_method: string;
+  payment_status: string;
+  quantity: number;
+  ticket_price: string;
+  amount: string;
+}
+
 const Receipt = () => {
   const { id: purchase_id } = useParams();
   const navigate = useNavigate();
-  const [receiptData, setReceiptData] = useState<any>(null);
+  const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchReceipt = async () => {
+      if (!purchase_id) {
+        setError("No purchase ID provided");
+        setLoading(false);
+        return;
+      }
+
       try {
-        const response = await apiRequest<{ receipt?: any }>(`/api/ticket/receipt/${purchase_id}`, { authenticated: true });
-        if (!response.receipt) {
+        const response = await apiRequest<{receipt: ReceiptData}>(`/api/ticket/receipt/${purchase_id}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          authenticated: true
+        });
+
+        if (response && response.receipt) {
+          setReceiptData(response.receipt);
+          setError(null);
+        } else {
+          setError("Receipt data is invalid");
           toast({
             title: "Error",
-            description: "Receipt not found.",
+            description: "Could not load receipt details.",
             variant: "destructive"
           });
-          setReceiptData(null);
-        } else {
-          setReceiptData(response.receipt);
         }
       } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Failed to load receipt";
+        setError(errorMessage);
         toast({
           title: "Error",
-          description: "Receipt not found.",
+          description: errorMessage,
           variant: "destructive"
         });
-        setReceiptData(null);
       } finally {
         setLoading(false);
       }
     };
-    if (purchase_id) fetchReceipt();
+
+    fetchReceipt();
   }, [purchase_id]);
 
   if (loading) {
@@ -52,15 +83,17 @@ const Receipt = () => {
     );
   }
 
-  if (!receiptData) {
+  if (error || !receiptData) {
     return (
       <PageTransition>
         <div className="container mx-auto pt-24 pb-8 px-4 md:px-0">
-          <p className="text-center text-destructive">
-            Receipt not found.<br />
-            Please make sure you are using a valid ticket purchase.
-          </p>
-          <Button className="mt-4" onClick={() => navigate("/profile")}>Back to Profile</Button>
+          <div className="max-w-md mx-auto text-center">
+            <h2 className="text-xl font-semibold text-destructive mb-2">Receipt Not Found</h2>
+            <p className="text-muted-foreground mb-6">
+              {error || "The receipt you're looking for could not be found. Please make sure you have the correct link."}
+            </p>
+            <Button onClick={() => navigate("/profile")}>Back to Profile</Button>
+          </div>
         </div>
       </PageTransition>
     );
@@ -165,12 +198,12 @@ const Receipt = () => {
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span>Standard Ticket x {receiptData.quantity}</span>
-                <span>${Number(receiptData.ticket_price).toFixed(2)}</span>
+                <span>${receiptData.ticket_price}</span>
               </div>
               <Separator />
               <div className="flex justify-between font-medium text-lg">
                 <span>Total</span>
-                <span>${Number(receiptData.amount || (receiptData.ticket_price * receiptData.quantity)).toFixed(2)}</span>
+                <span>${receiptData.amount}</span>
               </div>
             </div>
           </CardContent>

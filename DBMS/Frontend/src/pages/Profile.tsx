@@ -46,6 +46,7 @@ import { getAuthToken } from "@/utils/authUtils";
 
 interface eventHistory {
   event_id: string;
+  purchase_id: string;
   title: string;
   start_date: string;
   purchase_status: string;
@@ -105,9 +106,9 @@ const Profile = () => {
           } else {
             setEventHistory([]);
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           // If we get a 404, just set empty array
-          if (error.status === 404) {
+          if (error && typeof error === 'object' && 'status' in error && error.status === 404) {
             setEventHistory([]);
             return;
           }
@@ -427,7 +428,7 @@ const Profile = () => {
                                 variant="outline"
                                 size="sm"
                                 onClick={() =>
-                                  navigate(`/receipt/${event.event_id}`)
+                                  navigate(`/receipt/${event.purchase_id}`)
                                 }
                               >
                                 <Ticket className="h-4 w-4 mr-2" />
