@@ -66,6 +66,12 @@ interface profileData {
   bio: string;
 }
 
+interface ApiResponse<T> {
+  status?: number;
+  message?: string;
+  data?: T;
+}
+
 const Profile = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
@@ -86,26 +92,29 @@ const Profile = () => {
           return;
         }
 
-        const history = await apiRequest<eventHistory[]>(
-          "/api/event/eventHistory",
-          {
+        try {
+          const response = await apiRequest<eventHistory[]>("/api/event/eventHistory", {
             method: "GET",
             headers: {
               "Authorization": `Bearer ${token}`
             }
+          });
+          
+          if (Array.isArray(response)) {
+            setEventHistory(response);
+          } else {
+            setEventHistory([]);
           }
-        );
-        
-        if (Array.isArray(history)) {
-          setEventHistory(history);
-        } else {
-          console.error("Event history response is not an array:", history);
-          setEventHistory([]);
+        } catch (error: any) {
+          // If we get a 404, just set empty array
+          if (error.status === 404) {
+            setEventHistory([]);
+            return;
+          }
+          throw error;
         }
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
         console.error("Error fetching events:", error);
-        setApiErrors(prev => [...prev, `Event history: ${message}`]);
         setEventHistory([]);
       }
     };

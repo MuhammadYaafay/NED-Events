@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,7 +10,7 @@ const NavBar = () => {
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -24,7 +23,19 @@ const NavBar = () => {
   };
 
   const handleSettingsClick = () => {
-    navigate('/vendor-profile?tab=settings');
+    if (!user) return;
+    
+    switch (user.role) {
+      case 'vendor':
+        navigate('/vendor-profile?tab=settings');
+        break;
+      case 'organizer':
+        navigate('/organizer-dashboard?tab=settings');
+        break;
+      default:
+        navigate('/profile?tab=settings');
+        break;
+    }
     setIsOpen(false);
   };
 

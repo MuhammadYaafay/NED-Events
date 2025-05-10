@@ -1,4 +1,3 @@
-
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
@@ -27,7 +26,19 @@ const UserMenuDropdown = ({ onCloseMenu }: UserMenuDropdownProps) => {
   };
 
   const handleSettingsClick = () => {
-    navigate('/vendor-profile?tab=settings');
+    if (!user) return;
+    
+    switch (user.role) {
+      case 'vendor':
+        navigate('/vendor-profile?tab=settings');
+        break;
+      case 'organizer':
+        navigate('/organizer-dashboard?tab=settings');
+        break;
+      default:
+        navigate('/profile?tab=settings');
+        break;
+    }
     if (onCloseMenu) onCloseMenu();
   };
 
@@ -36,7 +47,7 @@ const UserMenuDropdown = ({ onCloseMenu }: UserMenuDropdownProps) => {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={user?.image} alt={user?.name} />
+            <AvatarImage src={user?.image_url} alt={user?.name} />
             <AvatarFallback>{user?.name.charAt(0)}</AvatarFallback>
           </Avatar>
         </Button>
