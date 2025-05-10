@@ -30,6 +30,7 @@ import FixTicketReservation from "./components/FixTicketReservation";
 import EventManagement from "./pages/EventManagement";
 import AttendeeManagement from "./pages/AttendeeManagement";
 import AnalyticsDashboard from "./pages/AnalyticsDashboard";
+import About from "./pages/About";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,7 @@ const App = () => (
           <NavBar />
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
             <Route path="/events" element={<Events />} />
             <Route path="/event/:id" element={<EventDetail />} />
             <Route path="/create-event" element={<CreateEvent />} />

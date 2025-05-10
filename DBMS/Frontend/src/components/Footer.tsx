@@ -1,4 +1,3 @@
-
 import { Link } from 'react-router-dom';
 import { Facebook, Twitter, Instagram, Mail, MessageCircle, Phone } from 'lucide-react';
 
@@ -34,7 +33,6 @@ const Footer = () => {
               <li><Link to="/events" className="text-gray-400 hover:text-primary text-sm transition-colors">Browse Events</Link></li>
               <li><Link to="/create-event" className="text-gray-400 hover:text-primary text-sm transition-colors">Create Event</Link></li>
               <li><Link to="#" className="text-gray-400 hover:text-primary text-sm transition-colors">Pricing</Link></li>
-              <li><Link to="#" className="text-gray-400 hover:text-primary text-sm transition-colors">Virtual Events</Link></li>
               <li><Link to="#" className="text-gray-400 hover:text-primary text-sm transition-colors">For Organizers</Link></li>
             </ul>
           </div>
@@ -42,7 +40,7 @@ const Footer = () => {
           <div>
             <h3 className="text-sm font-semibold uppercase tracking-wider mb-4">Company</h3>
             <ul className="space-y-2">
-              <li><Link to="#" className="text-gray-400 hover:text-primary text-sm transition-colors">About Us</Link></li>
+              <li><Link to="/about" className="text-gray-400 hover:text-primary text-sm transition-colors">About Us</Link></li>
               <li><Link to="#" className="text-gray-400 hover:text-primary text-sm transition-colors">Careers</Link></li>
               <li><Link to="#" className="text-gray-400 hover:text-primary text-sm transition-colors">Blog</Link></li>
               <li><Link to="#" className="text-gray-400 hover:text-primary text-sm transition-colors">Press</Link></li>
