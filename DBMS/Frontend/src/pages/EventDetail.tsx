@@ -1,16 +1,25 @@
-import { useParams, useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import PageTransition from '@/components/PageTransition';
-import { Calendar, MapPin, Users, Clock, Heart, Share2, Star, Send } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { apiRequest } from '@/utils/apiUtils';
-import { toast } from '@/components/ui/use-toast';
-import { getAuthToken } from '@/utils/authUtils';
+import PageTransition from "@/components/PageTransition";
+import {
+  Calendar,
+  MapPin,
+  Users,
+  Clock,
+  Heart,
+  Share2,
+  Star,
+  Send,
+} from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { apiRequest } from "@/utils/apiUtils";
+import { toast } from "@/components/ui/use-toast";
+import { getAuthToken } from "@/utils/authUtils";
 
 interface EventData {
   event_id: string;
@@ -58,7 +67,7 @@ const EventDetail = () => {
   useEffect(() => {
     const fetchEventDetails = async () => {
       try {
-        const eventData = await apiRequest(`/api/event/${id}`) as EventData;
+        const eventData = (await apiRequest(`/api/event/${id}`)) as EventData;
         setEvent(eventData);
         setLoading(false);
       } catch (error) {
@@ -66,14 +75,16 @@ const EventDetail = () => {
         toast({
           title: "Error",
           description: "Failed to load event details",
-          variant: "destructive"
+          variant: "destructive",
         });
       }
     };
 
     const fetchReviews = async () => {
       try {
-        const response = await apiRequest(`/api/userEngagement/getAllReviews/${id}`);
+        const response = await apiRequest(
+          `/api/userEngagement/getAllReviews/${id}`
+        );
         // Ensure reviews is always an array
         setReviews(Array.isArray(response) ? response : []);
       } catch (error) {
@@ -90,13 +101,18 @@ const EventDetail = () => {
           console.error("No authentication token found");
           return;
         }
-        const favorites = await apiRequest('/api/userEngagement/getAllFavourites', {
-          headers: {
-            "Authorization": `Bearer ${token}`
+        const favorites = await apiRequest(
+          "/api/userEngagement/getAllFavourites",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           }
-        });
+        );
         if (Array.isArray(favorites)) {
-          const isFavorite = favorites.some(fav => String(fav.event_id) === String(id));
+          const isFavorite = favorites.some(
+            (fav) => String(fav.event_id) === String(id)
+          );
           setIsLiked(isFavorite);
         }
       } catch (error) {
@@ -111,7 +127,7 @@ const EventDetail = () => {
 
   const handleLike = async () => {
     if (!isAuthenticated) {
-      navigate('/login');
+      navigate("/login");
       return;
     }
 
@@ -123,33 +139,39 @@ const EventDetail = () => {
       }
 
       if (!isLiked) {
-        const response = await apiRequest(`/api/userEngagement/addToFavourites/${id}`, {
-          method: 'POST',
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json"
+        const response = await apiRequest(
+          `/api/userEngagement/addToFavourites/${id}`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
           }
-        });
+        );
         if (response) {
           setIsLiked(true);
           toast({
             title: "Success",
-            description: "Event added to favorites"
+            description: "Event added to favorites",
           });
         }
       } else {
-        const response = await apiRequest(`/api/userEngagement/removeFromFavourites/${id}`, {
-          method: 'DELETE',
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json"
+        const response = await apiRequest(
+          `/api/userEngagement/removeFromFavourites/${id}`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
           }
-        });
+        );
         if (response) {
           setIsLiked(false);
           toast({
             title: "Success",
-            description: "Event removed from favorites"
+            description: "Event removed from favorites",
           });
         }
       }
@@ -158,14 +180,14 @@ const EventDetail = () => {
       toast({
         title: "Error",
         description: "Failed to update favorite status",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
 
   const handleReviewSubmit = async () => {
     if (!isAuthenticated) {
-      navigate('/login');
+      navigate("/login");
       return;
     }
 
@@ -173,7 +195,7 @@ const EventDetail = () => {
       toast({
         title: "Error",
         description: "Please select a rating",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -182,7 +204,7 @@ const EventDetail = () => {
       toast({
         title: "Error",
         description: "Please write a review",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -195,22 +217,24 @@ const EventDetail = () => {
       }
 
       const response = await apiRequest(`/api/userEngagement/addReview/${id}`, {
-        method: 'POST',          
+        method: "POST",
         headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
         body: {
           rating: userRating,
-          comment: userReview.trim()
-      }
+          comment: userReview.trim(),
+        },
       });
 
       if (response) {
         // Refresh reviews
-        const updatedReviews = await apiRequest(`/api/userEngagement/getAllReviews/${id}`);
+        const updatedReviews = await apiRequest(
+          `/api/userEngagement/getAllReviews/${id}`
+        );
         setReviews(Array.isArray(updatedReviews) ? updatedReviews : []);
-        
+
         // Reset form
         setUserReview("");
         setUserRating(0);
@@ -218,7 +242,7 @@ const EventDetail = () => {
 
         toast({
           title: "Success",
-          description: "Review submitted successfully"
+          description: "Review submitted successfully",
         });
       }
     } catch (error) {
@@ -226,18 +250,18 @@ const EventDetail = () => {
       toast({
         title: "Error",
         description: "Failed to submit review. Please try again.",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
 
   const handleBookTicket = () => {
     if (!isAuthenticated) {
-      navigate('/login');
+      navigate("/login");
       return;
     }
     // Pass event details and quantity via navigation state
-    navigate('/confirm-payment', {
+    navigate("/confirm-payment", {
       state: {
         eventDetails: {
           id: event.event_id,
@@ -246,8 +270,8 @@ const EventDetail = () => {
           quantity,
           totalPrice: Number(event.ticket_price) * quantity,
           serviceFee: 0, // You can calculate/add service fee if needed
-        }
-      }
+        },
+      },
     });
   };
 
@@ -282,8 +306,8 @@ const EventDetail = () => {
         <Card>
           <CardHeader>
             <div className="relative">
-              <img 
-                src={event.image || '/placeholder.svg'} 
+              <img
+                src={event.image || "/placeholder.svg"}
                 alt={event.title}
                 className="w-full h-[400px] object-cover rounded-t-lg"
               />
@@ -292,9 +316,11 @@ const EventDetail = () => {
                   variant="secondary"
                   size="icon"
                   onClick={handleLike}
-                  className={`rounded-full ${isLiked ? 'bg-red-100' : ''}`}
+                  className={`rounded-full ${isLiked ? "bg-red-100" : ""}`}
                 >
-                  <Heart className={isLiked ? 'text-red-500 fill-red-500' : ''} />
+                  <Heart
+                    className={isLiked ? "text-red-500 fill-red-500" : ""}
+                  />
                 </Button>
                 <Button
                   variant="secondary"
@@ -312,7 +338,9 @@ const EventDetail = () => {
                   <div className="flex items-center space-x-4 text-gray-500">
                     <div className="flex items-center">
                       <Calendar className="w-4 h-4 mr-1" />
-                      <span>{new Date(event.start_date).toLocaleDateString()}</span>
+                      <span>
+                        {new Date(event.start_date).toLocaleDateString()}
+                      </span>
                     </div>
                     <div className="flex items-center">
                       <Clock className="w-4 h-4 mr-1" />
@@ -332,7 +360,9 @@ const EventDetail = () => {
             <div className="grid md:grid-cols-3 gap-8">
               <div className="md:col-span-2 space-y-6">
                 <div>
-                  <h3 className="text-xl font-semibold mb-2">About this Event</h3>
+                  <h3 className="text-xl font-semibold mb-2">
+                    About this Event
+                  </h3>
                   <p className="text-gray-600">{event.description}</p>
                 </div>
 
@@ -346,8 +376,8 @@ const EventDetail = () => {
                             key={star}
                             className={`cursor-pointer ${
                               star <= (hoveredRating || userRating)
-                                ? 'text-yellow-400 fill-yellow-400'
-                                : 'text-gray-300'
+                                ? "text-yellow-400 fill-yellow-400"
+                                : "text-gray-300"
                             }`}
                             onMouseEnter={() => setHoveredRating(star)}
                             onMouseLeave={() => setHoveredRating(0)}
@@ -372,25 +402,31 @@ const EventDetail = () => {
                         <CardContent className="pt-4">
                           <div className="flex items-start space-x-4">
                             <img
-                              src={review.userImage || '/placeholder.svg'}
+                              src={review.userImage || "/placeholder.svg"}
                               alt={review.userName}
                               className="w-10 h-10 rounded-full"
                             />
                             <div className="flex-1">
                               <div className="flex justify-between items-center mb-2">
-                                <h4 className="font-semibold">{review.userName}</h4>
+                                <h4 className="font-semibold">
+                                  {review.userName}
+                                </h4>
                                 <div className="flex">
-                                  {Array.from({ length: review.rating }).map((_, i) => (
-                                    <Star
-                                      key={i}
-                                      className="w-4 h-4 text-yellow-400 fill-yellow-400"
-                                    />
-                                  ))}
+                                  {Array.from({ length: review.rating }).map(
+                                    (_, i) => (
+                                      <Star
+                                        key={i}
+                                        className="w-4 h-4 text-yellow-400 fill-yellow-400"
+                                      />
+                                    )
+                                  )}
                                 </div>
                               </div>
                               <p className="text-gray-600">{review.comment}</p>
                               <span className="text-sm text-gray-400 mt-2">
-                                {new Date(review.created_at).toLocaleDateString()}
+                                {new Date(
+                                  review.created_at
+                                ).toLocaleDateString()}
                               </span>
                             </div>
                           </div>
@@ -406,7 +442,9 @@ const EventDetail = () => {
                   <CardContent className="pt-6">
                     <div className="space-y-4">
                       <div>
-                        <p className="text-2xl font-bold">${event.ticket_price}</p>
+                        <p className="text-2xl font-bold">
+                          ${event.ticket_price}
+                        </p>
                         <p className="text-sm text-gray-500">per ticket</p>
                       </div>
                       <div className="flex items-center space-x-4">
@@ -415,20 +453,31 @@ const EventDetail = () => {
                           min="1"
                           max={event.max_quantity}
                           value={quantity}
-                          onChange={(e) => setQuantity(parseInt(e.target.value))}
+                          onChange={(e) =>
+                            setQuantity(parseInt(e.target.value))
+                          }
                           className="w-20"
                         />
                         <span className="text-sm text-gray-500">
                           {event.max_quantity} tickets remaining
                         </span>
                       </div>
-                      <Button 
-                        className="w-full" 
+                      <Button
+                        className="w-full"
                         onClick={handleBookTicket}
                         disabled={event.max_quantity === 0}
                       >
-                        {event.max_quantity === 0 ? 'Sold Out' : 'Book Tickets'}
+                        {event.max_quantity === 0 ? "Sold Out" : "Book Tickets"}
                       </Button>
+                      {user.role === "vendor" && (
+                        <Button
+                          onClick={() =>
+                            navigate(`/book-stall?eventId=${event.event_id}`)
+                          }
+                        >
+                          Book Stall
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -438,7 +487,7 @@ const EventDetail = () => {
                     <h3 className="font-semibold mb-4">Organizer</h3>
                     <div className="flex items-center space-x-4">
                       <img
-                        src={event.profile_image || '/placeholder.svg'}
+                        src={event.profile_image || "/placeholder.svg"}
                         alt={event.name}
                         className="w-12 h-12 rounded-full"
                       />
