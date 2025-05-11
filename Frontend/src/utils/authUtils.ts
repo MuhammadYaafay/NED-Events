@@ -34,7 +34,7 @@ export const getAuthUser = async (): Promise<User | null> => {
   try {
     const response = await fetch(
       `${
-        import.meta.env.VITE_API_URL || "http://localhost:5000"
+        import.meta.env.VITE_API_URL || "https://ned-events-backend.onrender.com"
       }/api/auth/getProfile`,
       {
         headers: {
@@ -61,7 +61,7 @@ export const logout = async (): Promise<boolean> => {
   }
   try {
     const response = await fetch(
-      `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/auth/logout`,
+      `${import.meta.env.VITE_API_URL || "https://ned-events-backend.onrender.com"}/api/auth/logout`,
       {
         method: "POST",
         headers: {
