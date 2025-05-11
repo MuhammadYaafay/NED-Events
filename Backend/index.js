@@ -20,7 +20,7 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Configure CORS
 app.use(cors({
-  origin: 'https://ned-events-backend.onrender.com',
+  origin: 'https://ned-events-frontend.onrender.com',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
