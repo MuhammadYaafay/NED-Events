@@ -51,13 +51,12 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
         throw new Error("No authentication token found");
       }
 
-      const response = await apiRequest("/api/auth", {
+      const response:any= await apiRequest("/api/auth", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      console.log("User refreshed:", response.user);
       setUser(response.user);
     } catch (error) {
       console.error("Error refreshing user:", error);

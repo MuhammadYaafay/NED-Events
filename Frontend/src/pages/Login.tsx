@@ -64,7 +64,10 @@ const Login = () => {
       
       // Update user in auth context
       if (setUser) {
+        
         setUser(user);
+
+        localStorage.setItem("role", JSON.stringify(user.role));
       }
       
       toast({
