@@ -67,7 +67,7 @@ const Login = () => {
         
         setUser(user);
 
-        localStorage.setItem("role", JSON.stringify(user.role));
+        localStorage.setItem("role", user.role);
       }
       
       toast({
