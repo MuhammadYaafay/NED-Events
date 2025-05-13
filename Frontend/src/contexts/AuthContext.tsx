@@ -45,24 +45,29 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const { toast } = useToast();
 
   const refreshUser = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        throw new Error("No authentication token found");
-      }
-
-      const response:any= await apiRequest("/api/auth/login", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setUser(response.user);
-    } catch (error) {
-      console.error("Error refreshing user:", error);
-      setUser(null); // Clear user state on error
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("No authentication token found");
     }
+
+    const response: any = await apiRequest("/api/auth/me", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    setUser(response.user);
+  } catch (error) {
+    console.error("Error refreshing user:", error);
+    setUser(null);
+  }
+};
+  const setUserState = (user: User | null) => {
+    setUser(user);
   };
+
 
   const register = async (
     name: string,
