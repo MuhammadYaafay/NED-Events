@@ -41,7 +41,7 @@ const DesktopNavigation = ({ location }: DesktopNavigationProps) => {
       ) : (
         <>
           <Link to="/login">
-            <Button variant="ghost" size="sm" className="text-gray-300 hover:text-primary">
+            <Button variant="ghost" size="sm" className="text-gray-300 ">
               <LogIn className="h-4 w-4 mr-2" />
               Log In
             </Button>

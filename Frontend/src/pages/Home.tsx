@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import EventCard from "@/components/EventCard";
 import PageTransition from "@/components/PageTransition";
 import { apiRequest } from "@/utils/apiUtils";
+import Login from "./Login";
 
 interface featuredEvents {
   event_id: string;
@@ -38,10 +39,13 @@ const Home = () => {
   const [featuredEvents, setFeaturedEvents] = useState<featuredEvents[]>([]);
   const [loading, setLoading] = useState(true);
   const [heroLoaded, setHeroLoaded] = useState(false);
-
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  
   useEffect(() => {
     const fetchEvents = async () => {
       try {
+        const token = localStorage.getItem("token");
+        if (token) {setIsLoggedIn(true);}
         const upcoming = (await apiRequest("/api/event/")) as upcomingEvents[];
         setUpcomingEvents(upcoming);
         const featured = (await apiRequest(
@@ -108,8 +112,10 @@ const Home = () => {
                       Find Events
                       <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
-                  </Link>
-                  <Link to="/create-event">
+
+                    {
+                      isLoggedIn ?(
+                        <Link to="/create-event">
                     <Button
                       size="lg"
                       variant="outline"
@@ -118,6 +124,22 @@ const Home = () => {
                       Host an Event
                     </Button>
                   </Link>
+                  ):(
+                    <Link to="/login">
+                      <Button
+                     
+                        size="lg"
+                        variant="outline"
+                        className="min-w-[180px] pl-3"
+                      >
+                        Host an Event
+                      </Button>
+                    </Link>
+                  )
+                  
+                      }
+                    
+</Link>
                 </div>
               </div>
             </div>
