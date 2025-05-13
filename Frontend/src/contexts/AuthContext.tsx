@@ -57,8 +57,8 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
           Authorization: `Bearer ${token}`,
         },
       });
-
-      setUser(response.user);
+      console.log("User refreshed:", response);
+      setUser(response.user.role);
     } catch (error) {
       console.error("Error refreshing user:", error);
       setUser(null); // Clear user state on error
