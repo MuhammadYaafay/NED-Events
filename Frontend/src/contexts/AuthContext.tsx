@@ -46,7 +46,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   const refreshUser = async () => {
     try {
-      const token = localStorage.getItem("authToken");
+      const token = localStorage.getItem("token");
       if (!token) {
         throw new Error("No authentication token found");
       }
