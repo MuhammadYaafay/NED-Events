@@ -8,7 +8,7 @@ const userEngagementRoutes = require("./routes/userEngagement.route");
 const eventRoutes = require("./routes/event.route")
 const ticketRoutes = require("./routes/ticket.route")
 const paymentRoutes = require("./routes/payment.route");
-
+const me = require("./routes/me.route");
 const app = express();
 dotenv.config();
 
@@ -27,7 +27,7 @@ app.use(cors({
 }));
 
 //Routes
-
+app.use('/api/me',me)
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes); 
 app.use("/api/stall", stallRoutes);
