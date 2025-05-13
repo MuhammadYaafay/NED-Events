@@ -124,10 +124,14 @@ const Events = () => {
                   }`}
                 />
               </Button>
-{/*                   
-              <Link to="/create-event">
+             {
+              (localStorage.getItem("role")=="organizer") ?  (<Link to="/create-event">
+                
                 <Button>Host an Event</Button>
-              </Link> */}
+                </Link> ):(
+                ""
+              )
+              }
             </div>
           </div>
 
