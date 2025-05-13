@@ -8,7 +8,7 @@ const About = () => {
       name: "Yaafay",
       role: "Software Engineering Student",
       description: "A dedicated student at NED University, passionate about building innovative software solutions.",
-      imageUrl: "https://scontent.fkhi16-2.fna.fbcdn.net/v/t39.30808-1/432941960_1914794918923042_2505016485537315150_n.jpg?stp=dst-jpg_s160x160_tt6&_nc_cat=106&ccb=1-7&_nc_sid=e99d92&_nc_ohc=ukufAVHw6ecQ7kNvwGksThe&_nc_oc=AdkfgCKmEJImI3qk6yzkFPH2Qv8j51qa1_GfHl1UcmdF6O2jZQjnH9IcvsVODT-CJqs&_nc_zt=24&_nc_ht=scontent.fkhi16-2.fna&_nc_gid=QxYoEe8ry2BuEGRn2TVi_w&oh=00_AfLzPdst-NfF45wY6_1uXt_4RK71b3YCPnnuR2S9DyORkQ&oe=682597F8" // You can add actual image URLs when available
+      imageUrl: "https://avatars.githubusercontent.com/u/171413624?v=4" // You can add actual image URLs when available
     },
     {
       name: "Khadija",
@@ -20,7 +20,7 @@ const About = () => {
       name: "Adil",
       role: "Software Engineering Student",
       description: "A driven student at NED University focused on developing user-centric applications.",
-      imageUrl: "https://scontent.fkhi16-2.fna.fbcdn.net/v/t39.30808-1/434031923_1122688338779699_6858103025138214747_n.jpg?stp=dst-jpg_s200x200_tt6&_nc_cat=102&ccb=1-7&_nc_sid=e99d92&_nc_ohc=DB141wL8A1YQ7kNvwE5EO9I&_nc_oc=AdnY5m4ONoU80iRX9pPDF4YqMCMwnOatrY8fnRdzJ-cW4q45ZwNuIsd3jq65dd10cRc&_nc_zt=24&_nc_ht=scontent.fkhi16-2.fna&_nc_gid=nSccH9RsPDo_4b3VZZgLWQ&oh=00_AfKDmDxSrYEck_KiHXDPvDRMnpD8lom1V87obdCO5iTkrg&oe=68257AF5"
+      imageUrl: "https://avatars.githubusercontent.com/u/145782640?v=4"
     },
     {
       name: "Sufia",
