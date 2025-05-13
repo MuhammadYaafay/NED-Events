@@ -40,12 +40,14 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [heroLoaded, setHeroLoaded] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  
+
   useEffect(() => {
     const fetchEvents = async () => {
       try {
         const token = localStorage.getItem("token");
-        if (token) {setIsLoggedIn(true);}
+        if (token) {
+          setIsLoggedIn(true);
+        }
         const upcoming = (await apiRequest("/api/event/")) as upcomingEvents[];
         setUpcomingEvents(upcoming);
         const featured = (await apiRequest(
@@ -113,33 +115,29 @@ const Home = () => {
                       <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
 
-                    {
-                      isLoggedIn ?(
-                        <Link to="/create-event">
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      className="min-w-[180px]"
-                    >
-                      Host an Event
-                    </Button>
+                    {isLoggedIn &&
+                    localStorage.getItem("role") === "organizer" ? (
+                      <Link to="/create-event">
+                        <Button
+                          size="lg"
+                          variant="outline"
+                          className="min-w-[180px]"
+                        >
+                          Host an Event
+                        </Button>
+                      </Link>
+                    ) : localStorage.length === 0 ? (
+                      <Link to="/login">
+                        <Button
+                          size="lg"
+                          variant="outline"
+                          className="min-w-[180px] pl-3"
+                        >
+                          Host an Event
+                        </Button>
+                      </Link>
+                    ) : null}
                   </Link>
-                  ):(
-                    <Link to="/login">
-                      <Button
-                     
-                        size="lg"
-                        variant="outline"
-                        className="min-w-[180px] pl-3"
-                      >
-                        Host an Event
-                      </Button>
-                    </Link>
-                  )
-                  
-                      }
-                    
-</Link>
                 </div>
               </div>
             </div>
