@@ -51,7 +51,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
         throw new Error("No authentication token found");
       }
 
-      const response = await apiRequest("/api/auth/refresh", {
+      const response = await apiRequest("/api/auth", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
