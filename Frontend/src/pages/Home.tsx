@@ -33,7 +33,6 @@ interface upcomingEvents {
   image: string;
   ticket_price: string;
 }
-
 const Home = () => {
   const [upcomingEvents, setUpcomingEvents] = useState<upcomingEvents[]>([]);
   const [featuredEvents, setFeaturedEvents] = useState<featuredEvents[]>([]);
