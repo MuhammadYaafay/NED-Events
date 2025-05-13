@@ -46,6 +46,7 @@ const categoryOptions = [
   { value: "networking", label: "Networking" },
   { value: "health", label: "Health" },
   { value: "arts", label: "Arts" },
+  { value: "Free", label: "Free" },
 ];
 
 const Events = () => {
@@ -123,10 +124,10 @@ const Events = () => {
                   }`}
                 />
               </Button>
-
+{/*                   
               <Link to="/create-event">
                 <Button>Host an Event</Button>
-              </Link>
+              </Link> */}
             </div>
           </div>
 
@@ -216,7 +217,7 @@ const Events = () => {
               {filteredEvents.length}{" "}
               {filteredEvents.length === 1 ? "result" : "results"} found
             </p>
-            <Select defaultValue="newest">
+            {/* <Select defaultValue="newest">
               <SelectTrigger className="w-[180px] bg-card/50 border-gray-800">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
@@ -225,9 +226,9 @@ const Events = () => {
                 <SelectItem value="oldest">Oldest First</SelectItem>
                 <SelectItem value="price-asc">Price: Low to High</SelectItem>
                 <SelectItem value="price-desc">Price: High to Low</SelectItem>
-                <SelectItem value="popular">Most Popular</SelectItem>
+                <SelectItem value=   "popular">Most Popular</SelectItem>
               </SelectContent>
-            </Select>
+            </Select> */}
           </div>
 
           {filteredEvents.length > 0 ? (

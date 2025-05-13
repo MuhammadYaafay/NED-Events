@@ -1,6 +1,6 @@
 import { getAuthToken } from "./authUtils";
 
-const API_URL = import.meta.env.VITE_API_URL || "https://ned-events-backend.onrender.com";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8800";
 
 interface ApiOptions {
   method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
