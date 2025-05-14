@@ -82,7 +82,6 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState<profileData | null>(null);
-  const [apiErrors, setApiErrors] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchEventsHistory = async () => {
@@ -153,7 +152,6 @@ const Profile = () => {
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         console.error("Error fetching favorites:", error);
-        setApiErrors(prev => [...prev, `Favorites: ${message}`]);
         setFavoriteEvents([]);
       }
     };
@@ -186,7 +184,6 @@ const Profile = () => {
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         console.error("Error fetching profile data:", error);
-        setApiErrors(prev => [...prev, `Profile data: ${message}`]);
         
         if (user) {
           setProfileData({
@@ -262,17 +259,6 @@ const Profile = () => {
   return (
     <PageTransition>
       <div className="container mx-auto py-12 px-4 md:px-0">
-        {apiErrors.length > 0 && (
-          <div className="mb-4 p-4 bg-red-50 text-red-800 rounded-md border border-red-200">
-            <h3 className="font-medium">API Errors:</h3>
-            <ul className="list-disc pl-5">
-              {apiErrors.map((error, index) => (
-                <li key={index}>{error}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-        
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-3xl font-bold">My Profile</h1>
           {user?.role && (
