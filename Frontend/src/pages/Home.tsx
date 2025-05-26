@@ -8,6 +8,8 @@ import EventCard from "@/components/EventCard";
 import PageTransition from "@/components/PageTransition";
 import { apiRequest } from "@/utils/apiUtils";
 import Login from "./Login";
+import { useToast } from "@/hooks/use-toast";
+import { ToastProvider } from "@/components/ui/toast";
 
 interface featuredEvents {
   event_id: string;
@@ -40,9 +42,14 @@ const Home = () => {
   const [heroLoaded, setHeroLoaded] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+    const { toast } = useToast();
+
   useEffect(() => {
+    
     const fetchEvents = async () => {
       try {
+        
+      
         const token = localStorage.getItem("token");
         if (token) {
           setIsLoggedIn(true);
@@ -65,6 +72,12 @@ const Home = () => {
   }, []);
 
   useEffect(() => {
+    
+    toast({
+        title: "Server Rendering",
+        description: `Wait a minute Server is loading ⌛`,
+        
+      });
     const timer = setTimeout(() => {
       setHeroLoaded(true);
     }, 300);
@@ -73,6 +86,7 @@ const Home = () => {
   }, []);
 
   return (
+    
     <PageTransition>
       <div className="min-h-screen">
         <section className="relative h-screen flex items-center justify-center overflow-hidden">

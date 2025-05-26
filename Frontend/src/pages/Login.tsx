@@ -75,6 +75,7 @@ const Login = () => {
         description: `Logged in successfully as ${user.role}`,
       });
       
+      
       // Redirect based on user role
       if (user.role === 'vendor') {
         navigate('/vendor-profile');
