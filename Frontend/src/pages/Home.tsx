@@ -73,12 +73,13 @@ const Home = () => {
 
   useEffect(() => {
     
-    toast({
+    
+    const timer = setTimeout(() => {
+      toast({
         title: "Server Rendering",
         description: `Wait a minute Server is loading ⌛`,
         
       });
-    const timer = setTimeout(() => {
       setHeroLoaded(true);
     }, 300);
 
