@@ -247,12 +247,18 @@ const Home = () => {
                 platform. Get started in minutes.
               </p>
               <div className="flex flex-col sm:flex-row justify-center gap-4">
-                <Link to="/create-event">
+                {
+                  (localStorage.role == 'organizer')?(
+
+                    
+                    <Link to="/create-event">
                   <Button size="lg" className="btn-hover-effect min-w-[200px]">
                     Create Event
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
+                  ):" "
+                }
                 <Link to="/events">
                   <Button size="lg" variant="outline" className="min-w-[200px]">
                     Explore First

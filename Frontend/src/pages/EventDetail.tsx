@@ -469,6 +469,47 @@ const EventDetail = () => {
               </div>
 
               <div>
+                {!localStorage.length?(<Card>
+                  <CardContent className="pt-6">
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-2xl font-bold">
+                          ${event.ticket_price}
+                        </p>
+                        <p className="text-sm text-gray-500">per ticket</p>
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        <Input
+                      type="number"
+                      min="1"
+                      max={event.tickets_remaining}
+                      value={quantity}
+                      className="w-20"
+                      disabled={event.tickets_remaining === 0}
+                      onChange={(e) => setQuantity(parseInt(e.target.value))}
+                    />
+                        <span className="text-sm text-gray-500">
+                          {event.tickets_remaining} tickets remaining
+                        </span>
+                      </div>
+                      <Button
+                        className="w-full"
+                        onClick={(e) => {
+                          
+                            navigate('/login')
+                            return;
+                          }
+                        }
+
+                      >
+                        Login
+                      </Button>
+                      
+                    
+                    </div>
+                  </CardContent>
+                </Card>):(
+
                 <Card>
                   <CardContent className="pt-6">
                     <div className="space-y-4">
@@ -480,15 +521,14 @@ const EventDetail = () => {
                       </div>
                       <div className="flex items-center space-x-4">
                         <Input
-                          type="number"
-                          min="1"
-                          max={event.tickets_remaining}
-                          value={quantity}
-                          onChange={(e) =>
-                            setQuantity(parseInt(e.target.value))
-                          }
-                          className="w-20"
-                        />
+                      type="number"
+                      min="1"
+                      max={event.tickets_remaining}
+                      value={quantity}
+                      className="w-20"
+                      disabled={event.tickets_remaining === 0}
+                      onChange={(e) => setQuantity(parseInt(e.target.value))}
+                    />
                         <span className="text-sm text-gray-500">
                           {event.tickets_remaining} tickets remaining
                         </span>
@@ -526,6 +566,7 @@ const EventDetail = () => {
                     </div>
                   </CardContent>
                 </Card>
+                )}
 
                 <Card className="mt-4">
                   <CardContent className="pt-6">
