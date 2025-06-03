@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, MapPin, Users, Clock } from 'lucide-react';
+import { Calendar, MapPin, Users, Clock, TicketPlus } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 
 interface EventCardProps {
@@ -51,11 +51,11 @@ const EventCard = ({
           className={`w-full h-full object-cover transition-all duration-500 ${isLoaded ? 'scale-100 blur-0' : 'scale-105 blur-sm'}`}
           onLoad={() => setIsLoaded(true)}
         />
-        {ticket_price && (
+        {ticket_price?(
           <div className="absolute top-3 right-3 z-20">
-            <Badge className="bg-primary hover:bg-primary">{ticket_price}</Badge>
+            <Badge className="bg-primary hover:bg-primary">  {ticket_price}</Badge>
           </div>
-        )}
+        ):"Free"}
         {featured && (
           <div className="absolute top-3 left-3 z-20">
             <Badge variant="outline" className="bg-black/50 backdrop-blur-sm border-primary text-primary">
@@ -69,12 +69,17 @@ const EventCard = ({
         
         <h3 className="font-semibold text-lg mb-2 line-clamp-2">{title}</h3>
         
-        <div className="flex items-center mb-2">
+        <div className="flex items-center mb-2 flex-row">
           <Badge variant="outline" className="bg-black/50 backdrop-blur-sm border-primary text-primary">
             {category}
           </Badge>
           </div>
-        <div className="space-y-2 text-sm mt-4">
+           <div className="flex items-center text-muted-foreground">
+            <Users className="h-4 w-4 mr-2 text-primary" />
+            <span>{booking_count} attending</span>
+          </div>
+        <div className="space-y-2 text-sm mt-4 flex flex-wrap-reverse gap-2">
+         
           <div className="flex items-center text-muted-foreground">
             <Calendar className="h-4 w-4 mr-2 text-primary" />
             <span>{formattedDate}</span>
@@ -90,10 +95,7 @@ const EventCard = ({
             <span className="truncate">{location}</span>
           </div>
           
-          <div className="flex items-center text-muted-foreground">
-            <Users className="h-4 w-4 mr-2 text-primary" />
-            <span>{booking_count} attending</span>
-          </div>
+          
         </div>
       </div>
     </Link>
