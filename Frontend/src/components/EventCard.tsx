@@ -30,7 +30,7 @@ const EventCard = ({
   featured
 }: EventCardProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
-
+  const isFree: boolean = Number(ticket_price) === 0;
   const formattedDate = new Date(start_date).toLocaleDateString('en-GB', {
     day: '2-digit',
     month: 'short',
@@ -51,11 +51,15 @@ const EventCard = ({
           className={`w-full h-full object-cover transition-all duration-500 ${isLoaded ? 'scale-100 blur-0' : 'scale-105 blur-sm'}`}
           onLoad={() => setIsLoaded(true)}
         />
-        {ticket_price?(
-          <div className="absolute top-3 right-3 z-20">
-            <Badge className="bg-primary hover:bg-primary">  {ticket_price}</Badge>
-          </div>
-        ):"Free"}
+        {isFree ? (
+  <div className="absolute top-3 right-3 z-20">
+    <Badge className="bg-primary hover:bg-primary">Free</Badge>
+  </div>
+) : (
+  <div className="absolute top-3 right-3 z-20">
+    <Badge className="bg-primary hover:bg-primary">{ticket_price}</Badge>
+  </div>
+)}
         {featured && (
           <div className="absolute top-3 left-3 z-20">
             <Badge variant="outline" className="bg-black/50 backdrop-blur-sm border-primary text-primary">
