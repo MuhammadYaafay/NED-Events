@@ -82,7 +82,7 @@ const EventCard = ({
             <Users className="h-4 w-4 mr-2 text-primary" />
             <span>{booking_count} attending</span>
           </div>
-        <div className="space-y-2 text-sm mt-4 flex flex-wrap-reverse gap-2">
+        <div className="space-y-2 text-sm mt-4 gap-2">
          
           <div className="flex items-center text-muted-foreground">
             <Calendar className="h-4 w-4 mr-2 text-primary" />
