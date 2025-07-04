@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import PageTransition from '@/components/PageTransition';
 import { useNavigate } from "react-router-dom";
+import { link } from "fs";
 
 const About = () => {
   const navigate =useNavigate()
@@ -11,27 +12,28 @@ const About = () => {
       role: "Software Engineering Student",
       description: "A dedicated student at NED University, passionate about building innovative software solutions.",
       imageUrl: "https://avatars.githubusercontent.com/u/171413624?v=4",
- // You can add actual image URLs when available
+      href:"https://github.com/MuhammadYaafay" // You can add actual image URLs when available
     },
     {
       name: "Khadija",
       role: "Software Engineering Student",
       description: "An aspiring software engineer at NED University with a keen interest in technology.",
       imageUrl: "https://avatars.githubusercontent.com/u/145339036?v=4",
-
+      href:"" 
     },
     {
       name: "Adil",
       role: "Software Engineering Student",
       description: "A driven student at NED University focused on developing user-centric applications.",
-      imageUrl: "https://avatars.githubusercontent.com/u/145782640?v=4"
+      imageUrl: "https://avatars.githubusercontent.com/u/145782640?v=4",
+      href:"https://github.com/adil-java"
     },
     {
       name: "Sufia",
       role: "Software Engineering Student",
       description: "A talented software engineering student at NED University with a passion for problem-solving.",
       imageUrl: null,
-
+      href:"https://github.com/sufia5125" 
     }
   ];
 
@@ -48,7 +50,7 @@ const About = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {teamMembers.map((member, index) => (
-              <Card  key={index}>
+              <Card onClick={() => window.location.href = member.href} key={index}>
                 <CardHeader className="flex flex-row items-center gap-4">
                   <Avatar className="h-16 w-16">
                     {member.imageUrl ? (
