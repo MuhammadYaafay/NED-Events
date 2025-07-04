@@ -15,13 +15,13 @@ const Footer = () => {
               Premium event management platform for creating unforgettable experiences.
             </p>
             <div className="flex space-x-4 mt-6">
-              <a href="#" className="text-gray-400 hover:text-primary transition-colors">
+              <a href="/" className="text-gray-400 hover:text-primary transition-colors">
                 <Facebook className="h-5 w-5" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-primary transition-colors">
+              <a href="/" className="text-gray-400 hover:text-primary transition-colors">
                 <Twitter className="h-5 w-5" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-primary transition-colors">
+              <a href="/" className="text-gray-400 hover:text-primary transition-colors">
                 <Instagram className="h-5 w-5" />
               </a>
             </div>
@@ -31,9 +31,9 @@ const Footer = () => {
             <h3 className="text-sm font-semibold uppercase tracking-wider mb-4">Platform</h3>
             <ul className="space-y-2">
               <li><Link to="/events" className="text-gray-400 hover:text-primary text-sm transition-colors">Browse Events</Link></li>
-              <li><Link to="/create-event" className="text-gray-400 hover:text-primary text-sm transition-colors">Create Event</Link></li>
-              <li><Link to="#" className="text-gray-400 hover:text-primary text-sm transition-colors">Pricing</Link></li>
-              <li><Link to="#" className="text-gray-400 hover:text-primary text-sm transition-colors">For Organizers</Link></li>
+            
+              <li><Link to="/" className="text-gray-400 hover:text-primary text-sm transition-colors">Pricing</Link></li>
+              <li><Link to="/" className="text-gray-400 hover:text-primary text-sm transition-colors">For Organizers</Link></li>
             </ul>
           </div>
           
@@ -57,12 +57,9 @@ const Footer = () => {
               </li>
               <li className="flex items-center text-gray-400 text-sm">
                 <Phone className="h-4 w-4 mr-2 text-primary" />
-                <span>+1 (888) 123-4567</span>
+                <span>+92 300000000</span>
               </li>
-              <li className="flex items-center text-gray-400 text-sm">
-                <MessageCircle className="h-4 w-4 mr-2 text-primary" />
-                <span>Live Chat (9AM-5PM EST)</span>
-              </li>
+              
             </ul>
           </div>
         </div>
