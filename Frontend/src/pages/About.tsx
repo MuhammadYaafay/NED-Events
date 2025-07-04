@@ -19,7 +19,7 @@ const About = () => {
       role: "Software Engineering Student",
       description: "An aspiring software engineer at NED University with a keen interest in technology.",
       imageUrl: "https://avatars.githubusercontent.com/u/145339036?v=4",
-      href:"" 
+      href:"https://github.com/kkJawaid" 
     },
     {
       name: "Adil",
@@ -50,7 +50,7 @@ const About = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {teamMembers.map((member, index) => (
-              <Card onClick={() => window.location.href = member.href} key={index}>
+              <Card onClick={() => window.open(member.href, '_blank')} key={index}>
                 <CardHeader className="flex flex-row items-center gap-4">
                   <Avatar className="h-16 w-16">
                     {member.imageUrl ? (
