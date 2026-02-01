@@ -1,4 +1,4 @@
-# Event Management System
+# NED-Events - Event Management System
 
 A web-based Event Management System that allows users to create, manage, and participate in events. The platform provides features for event organizers to schedule events, manage attendees, and share event details, while participants can browse, register, and receive updates about upcoming events.
 
@@ -29,8 +29,8 @@ A web-based Event Management System that allows users to create, manage, and par
 
 1. Clone the repository:
 	```bash
-	git clone https://github.com/muhammadyaafay/Event_Management_System.git
-	cd Event_Management_System
+	git clone https://github.com/muhammadyaafay/NED-Events.git
+	cd NED-Events
 	```
 
 2. Install dependencies for both frontend and backend:
